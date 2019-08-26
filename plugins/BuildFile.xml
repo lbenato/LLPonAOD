@@ -1,0 +1,42 @@
+<use name="FWCore/Framework"/>
+<use name="FWCore/PluginManager"/>
+<use name="FWCore/ParameterSet"/>
+<use name="DataFormats/PatCandidates"/>
+<use name="DataFormats/Luminosity"/>
+<use name="DataFormats/Candidate"/>
+<use name="DataFormats/ParticleFlowCandidate"/>
+<use name="DataFormats/ParticleFlowReco"/>
+<use name="DataFormats/Common"/>
+<use name="DataFormats/HepMCCandidate"/>
+<use name="DataFormats/BTauReco"/>
+<use name="DataFormats/JetReco"/>
+<use name="DataFormats/MuonReco"/>
+<use name="DataFormats/Math"/>
+<use name="DataFormats/TrackReco"/>
+<use name="DataFormats/VertexReco"/>
+<use name="SimDataFormats/JetMatching"/>
+<use name="SimDataFormats/GeneratorProducts"/>
+<use name="TrackingTools/TransientTrack"/>
+<use name="TrackingTools/IPTools"/>
+<use name="PhysicsTools/UtilAlgos"/>
+<use name="PhysicsTools/HepMCCandAlgos"/>
+<use name="PhysicsTools/CandUtils"/>
+<use name="PhysicsTools/Utilities"/>
+<use name="PhysicsTools/KinFitter"/>
+<use name="CommonTools/CandUtils"/>
+<use name="CommonTools/UtilAlgos"/>
+<use name="CommonTools/Utils"/>
+<use name="CondFormats/JetMETObjects"/>
+<use name="HLTrigger/HLTcore"/>
+<use name="RecoEgamma/EgammaTools"/>
+<use name="RecoEgamma/ElectronIdentification"/>
+<use name="RecoMET/METAlgorithms"/>
+<use name="CondFormats/BTauObjects"/>
+<use name="CondTools/BTau"/>
+
+<!--<use name="lhapdf"/>-->
+
+<flags CXXFLAGS="-Wno-delete-non-virtual-dtor"/>
+<use name="self"/>
+
+<flags EDM_PLUGIN="1"/>

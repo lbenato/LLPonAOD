@@ -1,6 +1,26 @@
 # Prerequisites
 *.d
 
+#Compiled python stuffs
+*/__init__.py*
+*/*.pyc
+*.pyc
+
+#Compiled c++ stuffs
+*/*_h.d
+*/*_h.so
+*/*_h*.pcm
+
+#Backups created by text editors
+*/\#*#
+\#*#
+*/*~
+*~
+
+#Undesired root files
+*.root
+tmpConfig*
+
 # Compiled Object files
 *.slo
 *.lo
