@@ -1,0 +1,8 @@
+<lcgdict>
+  <class name="JetType"/>
+  <class name="CaloJetType"/>
+  <class name="GenPType"/>
+  <class name="std::vector<JetType>"/>
+  <class name="std::vector<CaloJetType>"/>
+  <class name="std::vector<GenPType>"/>
+</lcgdict>
