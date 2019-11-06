@@ -245,7 +245,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
    nJets = nCaloJets = 0;
-   nElectrons = nMuons = nTaus = nPhotons = nTightMuons = 999;
+   nElectrons = nMuons = nTaus = nPhotons = 999;
+   nTightMuons = 0;
    isMC = false;
    isVBF = false;
    EventNumber = LumiNumber = RunNumber = nPV = 0;
