@@ -156,6 +156,141 @@ else:
 print "JEC ->",JECstring
 
 #-----------------------#
+#       COUNTER         #
+#-----------------------#
+process.counter = cms.EDAnalyzer('CounterAnalyzer',
+    lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
+    pythiaLOSample = cms.bool(True if noLHEinfo else False),
+)
+
+
+#-----------------------#
+#     PAT OBJECTS       #
+#-----------------------#
+
+#Transient track builder needed for vertices
+process.TransientTrackBuilderESProducer = cms.ESProducer("TransientTrackBuilderESProducer",
+    ComponentName = cms.string('TransientTrackBuilder')
+)
+process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+
+#Load Pat sequences
+#process.load("PhysicsTools.PatAlgos.patSequences_cff")
+#from PhysicsTools.PatAlgos.producersLayer1.patCandidates_cff import *
+
+#Puppi
+process.load('CommonTools.PileupAlgos.Puppi_cff')
+process.load('PhysicsTools.PatAlgos.slimming.puppiForMET_cff')
+process.pfNoLepPUPPI = cms.EDFilter("PdgIdCandViewSelector",
+                                    src = cms.InputTag("particleFlow"),
+                                    pdgId = cms.vint32( 1,2,22,111,130,310,2112,211,-211,321,-321,999211,2212,-2212 )
+                                    )
+
+process.puppiNoLep = process.puppi.clone()
+process.puppiNoLep.candName = cms.InputTag('pfNoLepPUPPI')
+
+#packedPFCandidates
+process.load('PhysicsTools.PatAlgos.slimming.packedPFCandidates_cff')
+
+#Vertex association and slimmed vertices
+process.load('PhysicsTools.PatAlgos.slimming.primaryVertexAssociation_cfi')
+process.primaryVertexAssociation.jets = cms.InputTag("ak4PFJets")
+process.load('PhysicsTools.PatAlgos.slimming.offlineSlimmedPrimaryVertices_cfi')
+
+#slimmedMuons
+process.load('PhysicsTools.PatAlgos.producersLayer1.muonProducer_cff')
+process.load('PhysicsTools.PatAlgos.selectionLayer1.muonSelector_cfi')
+process.selectedPatMuons.cut = cms.string("pt > 5 || isPFMuon || (pt > 3 && (isGlobalMuon || isStandAloneMuon || numberOfMatches > 0 || muonID(\'RPCMuLoose\')))")
+process.load('PhysicsTools.PatAlgos.slimming.slimmedMuons_cfi')
+
+#slimmedElectrons
+process.load('PhysicsTools.PatAlgos.producersLayer1.electronProducer_cff')
+#we might need to add stuff for electrons
+process.load('PhysicsTools.PatAlgos.selectionLayer1.electronSelector_cfi')
+process.load('PhysicsTools.PatAlgos.slimming.slimmedElectrons_cfi')
+
+#slimmedPhotons
+process.load('PhysicsTools.PatAlgos.producersLayer1.photonProducer_cff')
+#we might need to add stuff for photons
+process.load('PhysicsTools.PatAlgos.selectionLayer1.photonSelector_cfi')
+process.load('PhysicsTools.PatAlgos.slimming.slimmedPhotons_cfi')
+
+#slimmedTaus
+process.load('PhysicsTools.PatAlgos.producersLayer1.tauProducer_cff')
+#we might need to add stuff for taus
+process.load('PhysicsTools.PatAlgos.selectionLayer1.tauSelector_cfi')
+process.selectedPatTaus.cut = cms.string("pt > 18. && tauID(\'decayModeFindingNewDMs\')> 0.5")
+process.load('PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi')
+
+#slimmedJets
+process.load('PhysicsTools.PatAlgos.producersLayer1.jetProducer_cff')
+##we might need to add stuff, cross-check
+process.load('PhysicsTools.PatAlgos.selectionLayer1.jetSelector_cfi')
+process.selectedPatJets.cut = cms.string("pt > 5.")#no 10!
+#here: AK8 missing, work on that
+#process.load('PhysicsTools.PatAlgos.slimming.slimmedJets_cfi')
+
+#-----------------------#
+#  E-MU-GAMMA MODULES   #
+#-----------------------#
+
+#electron/photon regression modules
+from EgammaAnalysis.ElectronTools.regressionWeights_cfi import regressionWeights
+process = regressionWeights(process)
+
+process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
+  EGMSmearerElectrons = cms.PSet(
+    initialSeed = cms.untracked.uint32(8675389),
+    engineName = cms.untracked.string('TRandom3')
+  ),
+  EGMSmearerPhotons = cms.PSet(
+    initialSeed = cms.untracked.uint32(8675389),
+    engineName = cms.untracked.string('TRandom3')
+  )
+)
+
+process.load('EgammaAnalysis.ElectronTools.regressionApplication_cff')
+process.EGMRegression       = cms.Sequence(process.regressionApplication)
+
+process.load('EgammaAnalysis.ElectronTools.calibratedPatElectronsRun2_cfi')
+from EgammaAnalysis.ElectronTools.calibratedPatElectronsRun2_cfi import *
+process.EGMSmearerElectrons = calibratedPatElectrons.clone(
+  isMC = cms.bool(False if isData else True)
+)
+
+process.load('EgammaAnalysis.ElectronTools.calibratedPatPhotonsRun2_cfi')
+from EgammaAnalysis.ElectronTools.calibratedPatPhotonsRun2_cfi import *
+process.EGMSmearerPhotons = calibratedPatPhotons.clone(
+  isMC = cms.bool(False if isData else True)
+)
+
+
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
+ele_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
+                  'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff',
+                  'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff']
+
+for ele_idmod in ele_id_modules:
+    setupAllVIDIdsInModule(process,ele_idmod,setupVIDElectronSelection)
+
+#photons upstream modules
+switchOnVIDPhotonIdProducer(process, DataFormat.MiniAOD)
+ph_id_modules = ['RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring16_V2p2_cff',
+                 'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Spring16_nonTrig_V1_cff']
+for ph_idmod in ph_id_modules:
+    setupAllVIDIdsInModule(process,ph_idmod,setupVIDPhotonSelection)
+
+
+#muons upstream modules
+process.cleanedMuons = cms.EDProducer('PATMuonCleanerBySegments',
+                                      src = cms.InputTag('slimmedMuons'),#('calibratedMuons'),#
+                                      preselection = cms.string('track.isNonnull'),
+                                      passthrough = cms.string('isGlobalMuon && numberOfMatches >= 2'),
+                                      fractionOfSharedSegments = cms.double(0.499)
+                                      )
+
+#-----------------------#
 #        FILTERS        #
 #-----------------------#
 
@@ -181,22 +316,13 @@ else:
 
 
 ## MET filters, not available on AOD? TODO
-#process.load('RecoMET.METFilters.BadPFMuonFilter_cfi')
-#process.BadPFMuonFilter.muons = cms.InputTag('muons')
-#process.BadPFMuonFilter.PFCandidates = cms.InputTag('particleFlow')
+process.load('RecoMET.METFilters.BadPFMuonFilter_cfi')
+process.BadPFMuonFilter.muons = cms.InputTag('slimmedMuons')
+process.BadPFMuonFilter.PFCandidates = cms.InputTag('packedPFCandidates')
 
-#process.load('RecoMET.METFilters.BadChargedCandidateFilter_cfi')
-#process.BadChargedCandidateFilter.muons = cms.InputTag('slimmedMuons')
-#process.BadChargedCandidateFilter.PFCandidates = cms.InputTag('particleFlow')
-
-#-----------------------#
-#       COUNTER         #
-#-----------------------#
-process.counter = cms.EDAnalyzer('CounterAnalyzer',
-    lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
-    pythiaLOSample = cms.bool(True if noLHEinfo else False),
-)
-
+process.load('RecoMET.METFilters.BadChargedCandidateFilter_cfi')
+process.BadChargedCandidateFilter.muons = cms.InputTag('slimmedMuons')
+process.BadChargedCandidateFilter.PFCandidates = cms.InputTag('packedPFCandidates')
 
 #-----------------------#
 #       ANALYZER        #
@@ -267,11 +393,11 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     chsJetSet = cms.PSet(
         jets = cms.InputTag('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
-        jet1pt = cms.double(15),
-        jet2pt = cms.double(15),
+        jet1pt = cms.double(5),
+        jet2pt = cms.double(5),
         jeteta = cms.double(2.4),
         #addQGdiscriminator = cms.bool(False),
-        recalibrateJets = cms.bool(True),
+        recalibrateJets = cms.bool(True),#(True),
         recalibrateMass = cms.bool(False),
         #recalibratePuppiMass = cms.bool(False),
         #softdropPuppiMassString = cms.string("ak8PFJetsPuppiValueMap:ak8PFJetsPuppiSoftDropMass" if pt_AK8<170 else "ak8PFJetsPuppiSoftDropMass"),
@@ -317,8 +443,8 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
 
     caloJetSet = cms.PSet(
         jets = cms.InputTag('ak4CaloJets'),
-        jet1pt = cms.double(15.),
-        jet2pt = cms.double(15.),
+        jet1pt = cms.double(10.),
+        jet2pt = cms.double(10.),
         jeteta = cms.double(2.4),
         recalibrateJets = cms.bool(True),
         recalibrateMass = cms.bool(False),
