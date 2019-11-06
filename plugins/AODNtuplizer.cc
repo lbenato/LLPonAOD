@@ -43,6 +43,9 @@
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/JetReco/interface/PFJetCollection.h"
 
+//Pat classes
+#include "DataFormats/PatCandidates/interface/Muon.h"
+
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "TTree.h"
@@ -53,6 +56,7 @@
 #include "GenAnalyzer.h"
 #include "PileupAnalyzer.h"
 #include "TriggerAnalyzer.h"
+#include "MuonAnalyzer.h"
 #include "Objects.h"
 #include "ObjectsFormat.h"
 
@@ -86,6 +90,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::ParameterSet CHSJetPSet;
     edm::ParameterSet CaloJetPSet;
     edm::ParameterSet VBFJetPSet;
+    edm::ParameterSet MuonPSet;
     edm::EDGetTokenT<reco::PFJetCollection> jetToken;
 
 
@@ -95,6 +100,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     GenAnalyzer* theGenAnalyzer;
     PileupAnalyzer* thePileupAnalyzer;
     TriggerAnalyzer* theTriggerAnalyzer;
+    MuonAnalyzer* theMuonAnalyzer;
 
     double MinGenBpt, MaxGenBeta;
     double InvmassVBF, DetaVBF;//VBF tagging
@@ -105,6 +111,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<JetType> CHSJets;
     //std::vector<JetType> ManualJets;
     std::vector<CaloJetType> CaloJets;
+    //std::vector<LeptonType> Muons; //maybe later!
     std::vector<GenPType> GenVBFquarks;
     std::vector<GenPType> GenBquarks;
     std::vector<GenPType> GenLLPs;
@@ -125,6 +132,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     float PUWeight, PUWeightUp, PUWeightDown;
     long int nJets;
     long int nCaloJets;
+    long int nElectrons, nMuons, nTaus, nPhotons;
+    long int nTightMuons;
     AddFourMomenta addP4;
     float HT;
     float MinJetMetDPhi;
@@ -160,6 +169,7 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    CHSJetPSet(iConfig.getParameter<edm::ParameterSet>("chsJetSet")),
    CaloJetPSet(iConfig.getParameter<edm::ParameterSet>("caloJetSet")),
    VBFJetPSet(iConfig.getParameter<edm::ParameterSet>("vbfJetSet")),
+   MuonPSet(iConfig.getParameter<edm::ParameterSet>("muonSet")),
    MinGenBpt(iConfig.getParameter<double>("minGenBpt")),
    MaxGenBeta(iConfig.getParameter<double>("maxGenBeta")),
    InvmassVBF(iConfig.getParameter<double>("invmassVBF")),
@@ -180,6 +190,7 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    theGenAnalyzer         = new GenAnalyzer(GenPSet, consumesCollector());
    thePileupAnalyzer      = new PileupAnalyzer(PileupPSet, consumesCollector());
    theTriggerAnalyzer     = new TriggerAnalyzer(TriggerPSet, consumesCollector());
+   theMuonAnalyzer        = new MuonAnalyzer(MuonPSet, consumesCollector());
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
@@ -211,6 +222,7 @@ AODNtuplizer::~AODNtuplizer()
    delete theGenAnalyzer;
    delete thePileupAnalyzer;
    delete theTriggerAnalyzer;
+   delete theMuonAnalyzer;
 
 }
 
@@ -233,6 +245,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
    nJets = nCaloJets = 0;
+   nElectrons = nMuons = nTaus = nPhotons = nTightMuons = 999;
    isMC = false;
    isVBF = false;
    EventNumber = LumiNumber = RunNumber = nPV = 0;
@@ -264,8 +277,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //if(isVerbose) std::cout << "Trigger and met filters" << std::endl;
    theTriggerAnalyzer->FillTriggerMap(iEvent, TriggerMap);
    //theTriggerAnalyzer->FillMetFiltersMap(iEvent, MetFiltersMap);
-   //BadPFMuonFlag = theTriggerAnalyzer->GetBadPFMuonFlag(iEvent);
-   //BadChCandFlag = theTriggerAnalyzer->GetBadChCandFlag(iEvent);
+   BadPFMuonFlag = theTriggerAnalyzer->GetBadPFMuonFlag(iEvent);
+   BadChCandFlag = theTriggerAnalyzer->GetBadChCandFlag(iEvent);
    //theTriggerAnalyzer->FillL1FiltersMap(iEvent, L1FiltersMap);
 
    // 27 Sep 2018: saving only events that fired at least one trigger, to reduce output size
@@ -295,6 +308,23 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
    HT = theCHSJetAnalyzer->CalculateHT(iEvent,3,15,3.);
 
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // Muons
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   //if(isVerbose) std::cout << "Muons" << std::endl;
+   std::vector<pat::Muon> MuonVect = theMuonAnalyzer->FillMuonVector(iEvent);
+   std::vector<pat::Muon> TightMuonVect;
+   for(unsigned int a = 0; a<MuonVect.size(); a++)
+      {
+	if(MuonVect.at(a).hasUserInt("isTight") && MuonVect.at(a).userInt("isTight")>0 && MuonVect.at(a).hasUserFloat("pfIso04") && MuonVect.at(a).userFloat("pfIso04")<0.15)//tight iso for muons
+	  {
+	    TightMuonVect.push_back(MuonVect.at(a));
+	    nTightMuons++;
+	  }
+      }
+   nMuons = MuonVect.size();
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -520,6 +550,10 @@ AODNtuplizer::beginJob()
    tree -> Branch("nGenLL" , &nGenLL , "nGenLL/L");
    tree -> Branch("gen_b_radius" , &gen_b_radius , "gen_b_radius/F");
    tree -> Branch("m_pi" , &m_pi , "m_pi/F");
+   tree -> Branch("nMuons", &nMuons, "nMuons/I");
+   tree -> Branch("nTightMuons", &nTightMuons, "nTightMuons/I");
+   tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
+   tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    tree -> Branch("nJets" , &nJets , "nJets/L");
    tree -> Branch("nCaloJets" , &nCaloJets , "nCaloJets/L");
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
