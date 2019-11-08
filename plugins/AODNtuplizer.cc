@@ -65,6 +65,8 @@
 #include "PileupAnalyzer.h"
 #include "RecoTriggerAnalyzer.h"
 #include "TriggerAnalyzer.h"
+#include "PFCandidateAnalyzer.h"
+#include "VertexAnalyzer.h"
 #include "ElectronAnalyzer.h"
 #include "RecoElectronAnalyzer.h"
 #include "MuonAnalyzer.h"
@@ -110,6 +112,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::ParameterSet MuonPSet;
     edm::ParameterSet TauPSet;
     edm::ParameterSet PhotonPSet;
+    edm::ParameterSet VertexPSet;
+    edm::ParameterSet PFCandidatePSet;
     edm::EDGetTokenT<reco::PFJetCollection> jetToken;
     //edm::EDGetTokenT<std::vector<pat::MET> > metToken;
 
@@ -124,11 +128,15 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     MuonAnalyzer* theMuonAnalyzer;
     TauAnalyzer* theTauAnalyzer;
     RecoPhotonAnalyzer* theRecoPhotonAnalyzer;
+    VertexAnalyzer* theVertexAnalyzer;
+    PFCandidateAnalyzer* thePFCandidateAnalyzer;
 
     double MinGenBpt, MaxGenBeta;
     double InvmassVBF, DetaVBF;//VBF tagging
     bool WriteGenVBFquarks, WriteGenHiggs, WriteGenBquarks, WriteGenLLPs;
     bool WriteOnlyTriggerEvents, WriteOnlyisVBFEvents;
+    bool WriteAK4JetPFCandidates, WriteAK8JetPFCandidates;
+    bool WriteAllJetPFCandidates, WriteAllPFCandidates;
     bool PerformPreFiringStudies;
 
     std::vector<JetType> CHSJets;
@@ -139,6 +147,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<GenPType> GenBquarks;
     std::vector<GenPType> GenLLPs;
     GenPType GenHiggs;
+
+    std::vector<PFCandidateType> PFCandidates;
 
     MEtType MEt;
     //RecoMEtType RecoMEt;
@@ -158,11 +168,18 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int nCaloJets;
     long int nElectrons, nMuons, nTaus, nPhotons;
     long int nTightMuons, nTightElectrons;
+    long int nMatchedCHSJets;
+    long int nMatchedCaloJets;
+    long int number_of_b_matched_to_CHSJets;
+    long int number_of_b_matched_to_CaloJets;
     AddFourMomenta addP4;
     float HT;
     float MinJetMetDPhi;
     float MinJetMetDPhiAllJets;
     float m_pi, gen_b_radius;
+    long int nPFCandidates, nPFCandidatesTrack, nPFCandidatesHighPurityTrack, nPFCandidatesFullTrackInfo;
+    long int number_of_PV;
+    long int number_of_SV;
     //MET filters
     bool BadPFMuonFlag, BadChCandFlag;
     //Pre-firing
@@ -197,6 +214,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    MuonPSet(iConfig.getParameter<edm::ParameterSet>("muonSet")),
    TauPSet(iConfig.getParameter<edm::ParameterSet>("tauSet")),
    PhotonPSet(iConfig.getParameter<edm::ParameterSet>("photonSet")),
+   VertexPSet(iConfig.getParameter<edm::ParameterSet>("vertexSet")),
+   PFCandidatePSet(iConfig.getParameter<edm::ParameterSet>("pfCandidateSet")),
    MinGenBpt(iConfig.getParameter<double>("minGenBpt")),
    MaxGenBeta(iConfig.getParameter<double>("maxGenBeta")),
    InvmassVBF(iConfig.getParameter<double>("invmassVBF")),
@@ -207,20 +226,35 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    WriteGenLLPs(iConfig.getParameter<bool>("writeGenLLPs")),
    WriteOnlyTriggerEvents(iConfig.getParameter<bool>("writeOnlyTriggerEvents")),
    WriteOnlyisVBFEvents(iConfig.getParameter<bool>("writeOnlyisVBFEvents")),
+   WriteAK4JetPFCandidates(iConfig.getParameter<bool>("writeAK4JetPFCandidates")),
+   WriteAK8JetPFCandidates(iConfig.getParameter<bool>("writeAK8JetPFCandidates")),
+   WriteAllJetPFCandidates(iConfig.getParameter<bool>("writeAllJetPFCandidates")),
+   WriteAllPFCandidates(iConfig.getParameter<bool>("writeAllPFCandidates")),
    PerformPreFiringStudies(iConfig.getParameter<bool>("performPreFiringStudies"))
 
 {
 
-   theCHSJetAnalyzer      = new JetAnalyzer(CHSJetPSet, consumesCollector());
-   theCaloJetAnalyzer     = new CaloJetAnalyzer(CaloJetPSet, consumesCollector());
-   theVBFJetAnalyzer      = new JetAnalyzer(VBFJetPSet, consumesCollector());
-   theGenAnalyzer         = new GenAnalyzer(GenPSet, consumesCollector());
-   thePileupAnalyzer      = new PileupAnalyzer(PileupPSet, consumesCollector());
-   theRecoTriggerAnalyzer     = new RecoTriggerAnalyzer(TriggerPSet, consumesCollector());
-   theRecoElectronAnalyzer    = new RecoElectronAnalyzer(ElectronPSet, consumesCollector());
-   theMuonAnalyzer        = new MuonAnalyzer(MuonPSet, consumesCollector());
-   theTauAnalyzer         = new TauAnalyzer(TauPSet, consumesCollector());
-   theRecoPhotonAnalyzer      = new RecoPhotonAnalyzer(PhotonPSet, consumesCollector());
+   // Check writePFCandidate flags
+   int PFCandidateFlags = 0;
+   if (WriteAK4JetPFCandidates) PFCandidateFlags++;
+   if (WriteAK8JetPFCandidates) PFCandidateFlags++;
+   if (WriteAllJetPFCandidates) PFCandidateFlags++;
+   if (WriteAllPFCandidates)    PFCandidateFlags++;
+   if (PFCandidateFlags > 1)   throw cms::Exception("Configuration") << "More than one writePFCandidates flag selected. Please choose one option only!";
+
+
+   theCHSJetAnalyzer       = new JetAnalyzer(CHSJetPSet, consumesCollector());
+   theCaloJetAnalyzer      = new CaloJetAnalyzer(CaloJetPSet, consumesCollector());
+   theVBFJetAnalyzer       = new JetAnalyzer(VBFJetPSet, consumesCollector());
+   theGenAnalyzer          = new GenAnalyzer(GenPSet, consumesCollector());
+   thePileupAnalyzer       = new PileupAnalyzer(PileupPSet, consumesCollector());
+   theRecoTriggerAnalyzer  = new RecoTriggerAnalyzer(TriggerPSet, consumesCollector());
+   theRecoElectronAnalyzer = new RecoElectronAnalyzer(ElectronPSet, consumesCollector());
+   theMuonAnalyzer         = new MuonAnalyzer(MuonPSet, consumesCollector());
+   theTauAnalyzer          = new TauAnalyzer(TauPSet, consumesCollector());
+   theRecoPhotonAnalyzer   = new RecoPhotonAnalyzer(PhotonPSet, consumesCollector());
+   theVertexAnalyzer       = new VertexAnalyzer(VertexPSet, consumesCollector());
+   thePFCandidateAnalyzer  = new PFCandidateAnalyzer(PFCandidatePSet, consumesCollector());
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
@@ -259,6 +293,8 @@ AODNtuplizer::~AODNtuplizer()
    delete theMuonAnalyzer;
    delete theTauAnalyzer;
    delete theRecoPhotonAnalyzer;
+   delete theVertexAnalyzer;
+   delete thePFCandidateAnalyzer;
 
 }
 
@@ -288,12 +324,17 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    EventNumber = LumiNumber = RunNumber = nPV = 0;
    EventWeight = PUWeight = PUWeightDown = PUWeightUp = 1.;
    HT = 0.;
+   nMatchedCHSJets = 0;
+   nMatchedCaloJets = 0;
+   number_of_b_matched_to_CHSJets = 0;
+   number_of_b_matched_to_CaloJets = 0;
+   MinJetMetDPhi = MinJetMetDPhiAllJets = 10.;
    nGenBquarks = nGenLL = 0;
    m_pi = 0.;
    gen_b_radius = -1.;
    Prefired = false;
-
-
+   nPFCandidates = nPFCandidatesTrack = nPFCandidatesHighPurityTrack = nPFCandidatesFullTrackInfo = 0;
+   number_of_PV = number_of_SV = 0;
 
    //Event info                                                                
    isMC = !iEvent.isRealData();
@@ -550,6 +591,79 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //std::cout<<nJets<<std::endl;
    //std::cout << ManualJets.size() << std::endl;
 
+
+   //One way to implement jet-gen b-quark matching is performed here
+   //if(isVerbose) std::cout << "AK4 CHS matching to b quarks" << std::endl;
+   std::vector<pat::Jet> MatchedCHSJetsVect;
+
+   //Matching the b quarks to AK4CHS jets
+   //Starting point: b-quark
+   int matching_index_CHSJets;//local variable
+   float delta_R_CHSJets;//local variable
+   float current_delta_R_CHSJets;//local variable
+   for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+      {
+	delta_R_CHSJets = 1000.;
+	current_delta_R_CHSJets = 1000.;
+	matching_index_CHSJets = -1;
+	for(unsigned int a = 0; a<CHSJetsVect.size(); a++)
+	  {
+	    current_delta_R_CHSJets = fabs(reco::deltaR(CHSJetsVect[a].eta(),CHSJetsVect[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+	    if(current_delta_R_CHSJets<0.4 && current_delta_R_CHSJets<delta_R_CHSJets && CHSJetsVect[a].genParton() && (fabs(CHSJetsVect[a].hadronFlavour())==5 || fabs(CHSJetsVect[a].partonFlavour())==5) && abs( Utilities::FindMotherId(CHSJetsVect[a].genParton()) )==9000006)
+	      //this implements all the reasonable possibilities!
+	      {
+	      delta_R_CHSJets = min(delta_R_CHSJets,current_delta_R_CHSJets);
+	      matching_index_CHSJets = a;
+	      CHSJetsVect[a].addUserInt("original_jet_index",a+1);
+	      MatchedCHSJetsVect.push_back(CHSJetsVect[a]);//duplicates possible, must be removed afterwards!
+	      }
+	  }
+	if(matching_index_CHSJets>=0){
+	  number_of_b_matched_to_CHSJets++;
+	}
+     }
+
+
+    //Remove duplicates from Matched CHSJets Vector
+    for(unsigned int r = 0; r<MatchedCHSJetsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedCHSJetsVect.size(); s++)
+	  {
+	    if(r!=s && MatchedCHSJetsVect[s].pt()==MatchedCHSJetsVect[r].pt()) MatchedCHSJetsVect.erase(MatchedCHSJetsVect.begin()+s);
+	  }//duplicates removed
+      }
+    nMatchedCHSJets = MatchedCHSJetsVect.size();
+
+    // add b-matching infos into original jet
+    for(unsigned int r = 0; r<CHSJetsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedCHSJetsVect.size(); s++)
+	  {
+
+	    if(MatchedCHSJetsVect[s].pt()==CHSJetsVect[r].pt())
+	      {
+		//let's add flags helping to find matched jets corresponding to original Jets vector
+		CHSJetsVect[r].addUserInt("isGenMatched",1);
+		//CHSJetsVect[r].addUserInt("isMatchedToMatchedCHSJet",s+1);//obsolete
+	      }
+
+	  }
+	//add number of b's matched to jet
+	current_delta_R_CHSJets = 1000.;
+	int number_bs_matched_to_CHSJet = 0;
+	for (unsigned int b = 0; b<GenBquarksVect.size(); b++){
+	  current_delta_R_CHSJets = fabs(reco::deltaR(CHSJetsVect[r].eta(),CHSJetsVect[r].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+	  if(current_delta_R_CHSJets<0.4 && CHSJetsVect[r].genParton() && (fabs(CHSJetsVect[r].hadronFlavour())==5 || fabs(CHSJetsVect[r].partonFlavour())==5) && abs( Utilities::FindMotherId(CHSJetsVect[r].genParton()) )==9000006)
+	    //this implements all the reasonable possibilities!
+	    {
+	      number_bs_matched_to_CHSJet += 1;
+	    }
+	}
+	CHSJetsVect[r].addUserInt("nMatchedGenBquarks",number_bs_matched_to_CHSJet);
+      }
+
+
+
    //Remove jets tagged as VBF from the list of potential signal
    for(unsigned int r = 0; r<CHSJetsVect.size(); r++)
       {
@@ -562,9 +676,42 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	  }//VBF jet pair removed
     }
 
-   //Gen matching: to be performed!
-
    nJets = CHSJetsVect.size();
+
+   //QCD killer cut
+   for(unsigned int i = 0; i < CHSJetsVect.size(); i++) if(fabs(reco::deltaPhi(CHSJetsVect[i].phi(), MET.phi())) < MinJetMetDPhi) MinJetMetDPhi = fabs(reco::deltaPhi(CHSJetsVect[i].phi(), MET.phi()));
+
+
+    // VBFPairJets
+    // add b-matching infos into original jet
+    for(unsigned int r = 0; r<VBFPairJetsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedCHSJetsVect.size(); s++)
+	  {
+
+	    if(MatchedCHSJetsVect[s].pt()==VBFPairJetsVect[r].pt())
+	      {
+		//let's add flags helping to find matched jets corresponding to original Jets vector
+		VBFPairJetsVect[r].addUserInt("isGenMatched",1);
+		//CHSJetsVect[r].addUserInt("isMatchedToMatchedCHSJet",s+1);//obsolete
+	      }
+
+	  }
+      }
+
+    for(unsigned int j = 0; j < CHSJetsVect.size(); j++){
+      int nTrackConstituents = 0;
+      //per jet tag: number of jet constituents and number of tracks
+      std::vector<edm::Ptr<reco::Candidate>> JetConstituentVect = CHSJetsVect[j].getJetConstituents();
+      CHSJetsVect.at(j).addUserInt("nConstituents",JetConstituentVect.size());
+      for(unsigned int k = 0; k < JetConstituentVect.size(); k++){
+
+        if(JetConstituentVect[k]->charge()!=0){
+          nTrackConstituents++;
+        }
+      }
+      CHSJetsVect.at(j).addUserInt("nTrackConstituents",nTrackConstituents);
+    }
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -572,13 +719,333 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
    std::vector<reco::CaloJet> CaloJetsVect = theCaloJetAnalyzer->FillJetVector(iEvent);
-   nCaloJets = CaloJetsVect.size();
+
+    //Remove calo jets overlapped with VBF pair
+    //We must perform a DR matching, since pT might be different
+    //int matching_index_CaloJets_asVBF;//local variable
+    float delta_R_CaloJets_asVBF;//local variable
+    float current_delta_R_CaloJets_asVBF;//local variable
+
+    for(unsigned int r = 0; r<CaloJetsVect.size(); r++)
+      {
+	delta_R_CaloJets_asVBF = 1000.;
+	current_delta_R_CaloJets_asVBF = 1000.;
+	for(unsigned int s = 0; s<VBFPairJetsVect.size(); s++)
+	  {
+            current_delta_R_CaloJets_asVBF = fabs(reco::deltaR(CaloJetsVect[r].eta(),CaloJetsVect[r].phi(),VBFPairJetsVect[s].eta(),VBFPairJetsVect[s].phi()));
+            if(current_delta_R_CaloJets_asVBF<0.4 && current_delta_R_CaloJets_asVBF<delta_R_CaloJets_asVBF && isVBF)
+	      //this implements all the reasonable possibilities!
+	      {
+	      delta_R_CaloJets_asVBF = min(delta_R_CaloJets_asVBF,current_delta_R_CaloJets_asVBF);
+              //if(isVerbose) std::cout << "This calo jet removed because overlaps VBF pair: pt " << CaloJetsVect[r].pt() << " ; eta: " << CaloJetsVect[r].eta() << " ; phi: " << CaloJetsVect[r].phi() << std::endl;
+              CaloJetsVect.erase(CaloJetsVect.begin()+r);
+	      }
+	  }//VBF jet pair removed
+      }
+    nCaloJets = CaloJetsVect.size();
+
+
    // for gen matching, to be filled later
    std::vector<bool> caloGenMatched;
    for(unsigned int i = 0; i < CaloJetsVect.size(); i++) caloGenMatched.push_back(false);//to be implemented later
 
+  std::vector<reco::CaloJet> MatchedCaloJetsVect;
+    //Matching the b quarks to AK4 calo jets
+    //Starting point: b-quark
+    int matching_index_CaloJets;//local variable
+    float delta_R_CaloJets;//local variable
+    float current_delta_R_CaloJets;//local variable
+    for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+      {
+	delta_R_CaloJets = 1000.;
+	current_delta_R_CaloJets = 1000.;
+	matching_index_CaloJets = -1;
+	for(unsigned int a = 0; a<CaloJetsVect.size(); a++)
+	  {
+	    current_delta_R_CaloJets = fabs(reco::deltaR(CaloJetsVect[a].eta(),CaloJetsVect[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+	    if(current_delta_R_CaloJets<0.4 && current_delta_R_CaloJets<delta_R_CaloJets)
+	      //this implements all the reasonable possibilities!
+	      {
+	      delta_R_CaloJets = min(delta_R_CaloJets,current_delta_R_CaloJets);
+	      matching_index_CaloJets = a;
+              caloGenMatched[a] = true;
+	      //JetsVect[a].addUserInt("original_jet_index",a+1);
+	      MatchedCaloJetsVect.push_back(CaloJetsVect[a]);//avoid duplicates!
+	      }
+	  }
+	if(matching_index_CaloJets>=0){
+	  number_of_b_matched_to_CaloJets++;
+	}
+      }
+    //Remove duplicates from Matched Jets Vector
+    for(unsigned int r = 0; r<MatchedCaloJetsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedCaloJetsVect.size(); s++)
+	  {
+	    if(r!=s && MatchedCaloJetsVect[s].pt()==MatchedCaloJetsVect[r].pt()) MatchedCaloJetsVect.erase(MatchedCaloJetsVect.begin()+s);
+	  }//duplicates removed
+      }
+    nMatchedCaloJets = MatchedCaloJetsVect.size();
 
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+    // Vertices
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+
+    //if(isVerbose) std::cout << "Vertices" << std::endl;
+    //PrimVertices.clear();
+    //SecVertices.clear();
+
+    std::vector<reco::Vertex> PVertexVect;
+    std::vector<reco::VertexCompositePtrCandidate> SVertexVect;
+
+    PVertexVect = theVertexAnalyzer->FillPvVector(iEvent);
+    SVertexVect = theVertexAnalyzer->FillSvVector(iEvent);
+
+    //for(unsigned int i = 0; i < PVertexVect.size(); i++) PrimVertices.push_back( VertexType() );
+    //for(unsigned int i = 0; i < SVertexVect.size(); i++) SecVertices.push_back( VertexType() );
+
+    number_of_PV = PVertexVect.size();
+    number_of_SV = SVertexVect.size();
+    nSV = number_of_SV;
+
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+    // PFCandidates
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+
+    //if(isVerbose) std::cout << "PF candidates" << std::endl;
+    PFCandidates.clear();
+
+    // PFCandidate variables
+    std::vector<pat::PackedCandidate> PFCandidateVect;
+    std::vector<int> PFCandidateAK4JetIndex;
+    std::vector<int> PFCandidateAK8JetIndex;
+    std::vector<int> PFCandidateVtxIndex;
+
+    std::vector<reco::CandSecondaryVertexTagInfo *> bTagInfoVect;
+    std::vector<reco::CandIPTagInfo *> bTagIPInfoVect;
+    std::vector<int> indexSVJet;
+
+    PFCandidateVect = thePFCandidateAnalyzer->FillPFCandidateVector(iEvent);
+
+    // Initialize PFCandidate variables: Set indices to -1 (not matched)
+    for(unsigned int i = 0; i < PFCandidateVect.size(); i++){
+      PFCandidateAK4JetIndex.push_back(-1);
+      PFCandidateAK8JetIndex.push_back(-1);
+      PFCandidateVtxIndex.push_back(-1);
+
+      nPFCandidates++;
+      if(PFCandidateVect.at(i).charge()!=0) nPFCandidatesTrack++;
+      if(PFCandidateVect.at(i).trackHighPurity()) nPFCandidatesHighPurityTrack++;
+      if(PFCandidateVect.at(i).charge()!=0 && PFCandidateVect.at(i).pt() > 0.95) nPFCandidatesFullTrackInfo++;
+    }
+
+
+    // PFCandidate matching to AK4 jets, AK8 jets and PV's
+    unsigned int nPFCandidatesMatchedToAK4Jet = 0;
+    //unsigned int nPFCandidatesMatchedToAK8Jet = 0;
+    //unsigned int nPFCandidatesMatchedToAnyJet = 0;
+
+    for(unsigned int i = 0; i < PFCandidateVect.size(); i++){
+
+      int nMatchedAK4Jets = 0; // TODO: Remove if no warnings are observed during a large production.
+      int nMatchedAK8Jets = 0;
+      int nMatchedPVs = 0;
+
+      // AK4 Jets
+      for(unsigned int j = 0; j < CHSJetsVect.size(); j++){
+
+	std::vector<edm::Ptr<reco::Candidate>> JetConstituentVect = CHSJetsVect[j].getJetConstituents();
+	for(unsigned int k = 0; k < JetConstituentVect.size(); k++){
+	  if (PFCandidateVect[i].p4() == JetConstituentVect[k]->p4()){
+            //std::cout<<"debug zero!!! nothing matches bw jet constituents and pf cand!!!" <<std::endl;
+	    PFCandidateAK4JetIndex[i]=j;
+	    nMatchedAK4Jets++;
+	    nPFCandidatesMatchedToAK4Jet++;
+            //nPFCandidatesMatchedToAnyJet++;
+	  }
+
+	}
+
+      }
+
+      if (nMatchedAK4Jets > 1) edm::LogWarning("PFCandidate-Jet Matching") << "More than 1 AK4 jet contituent has been matched to PFCandidate";
+
+
+     // PVs
+      for(unsigned int j = 0; j < PVertexVect.size(); j++){
+
+	if (PFCandidateVect[i].vertexRef()->position() == PVertexVect[j].position()){
+	  PFCandidateVtxIndex[i]=j;
+	  nMatchedPVs++;
+	}
+      }
+
+      if (nMatchedPVs > 1) edm::LogWarning("PFCandidate-PV") << "WARNING: More than 1 PV has been matched to PFCandidate " << i << std::endl;
+
+
+    }
+
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+    // EXO-16-003 variables and and n(Pixel)Hits //TODO: Move to separate analyzer!
+    //------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------
+
+    // AK4 jets
+    for (unsigned int j = 0; j < CHSJetsVect.size(); j++){
+      int jj = j;
+      // Initialize jet variables from PFCandidates:
+      float sumPtJet = 0.;
+      std::vector<float> sumPtPV;
+      std::vector<float> sigIP2D;
+      std::vector<float> theta2D;
+      std::vector<float> POCA_theta2D;
+      std::vector<float> nPixelHits;
+      std::vector<float> nHits;
+
+      float alphaMax = -100.;
+      float sigIP2DMedian = -100.;
+      float theta2DMedian = -100.;
+      float POCA_theta2DMedian = -100.;
+      float nPixelHitsMedian = -1.;
+      float nHitsMedian = -1.;
+
+      int nTracks0PixelHits = 0;
+      int nTracks1PixelHit = 0;
+      int nTracks2PixelHits = 0;
+      int nTracks3PixelHits = 0;
+      int nTracks4PixelHits = 0;
+      int nTracks5PixelHits = 0;
+      int nTracksAtLeast6PixelHits = 0;
+      int nTracksValidHitInBPix1 = 0;
+      int nTracks0LostInnerHits = 0;
+      int nTracks1LostInnerHit = 0;
+      int nTracksAtLeast2LostInnerHits = 0;
+
+      // Initialize vertex variable
+      for(unsigned int i = 0; i < PVertexVect.size(); i++) sumPtPV.push_back(0.);
+
+      for (unsigned int i = 0; i < PFCandidateVect.size(); i++){
+
+	if (jj == PFCandidateAK4JetIndex[i]){
+          //std::cout << " debugggggggg 1! " << std::endl;
+	  if (PFCandidateVect[i].charge()){
+	    sumPtJet += PFCandidateVect[i].pt();
+	    sumPtPV[PFCandidateVtxIndex[i]] += PFCandidateVect[i].pt();
+	    //sigIP2D.push_back(PFCandidateVect[i].dxy()/PFCandidateVect[i].dxyError()); //dxyError stored only for pT>0.95 (see below)
+	    if (CHSJetsVect[j].hasTagInfo("pfSecondaryVertex")) {
+	      reco::CandSecondaryVertexTagInfo const *svTagInfo = CHSJetsVect[j].tagInfoCandSecondaryVertex("pfSecondaryVertex");
+	      if (svTagInfo->nVertices() > 0) {
+		const GlobalVector &dir = svTagInfo->flightDirection(0);
+		theta2D.push_back( std::acos( ( dir.x()*PFCandidateVect[i].px() + dir.y()*PFCandidateVect[i].py() ) /
+					      ( std::sqrt(dir.x()*dir.x()+dir.y()*dir.y()) * PFCandidateVect[i].pt() ) ) );
+	      }
+	    }
+
+            float px = PFCandidateVect[i].pt()*TMath::Cos(PFCandidateVect[i].phiAtVtx());
+            float py = PFCandidateVect[i].pt()*TMath::Sin(PFCandidateVect[i].phiAtVtx());
+            float vR = std::sqrt(PFCandidateVect[i].vx()*PFCandidateVect[i].vx() + PFCandidateVect[i].vy()*PFCandidateVect[i].vy());
+            POCA_theta2D.push_back(std::acos((PFCandidateVect[i].vx()*px + PFCandidateVect[i].vy()*py) / (vR*PFCandidateVect[i].pt())));
+
+	    // Full tracking info stored only for pT>0.95 GeV
+	    // https://twiki.cern.ch/twiki/bin/view/CMSPublic/WorkBookMiniAOD2016#Embedded_track_information
+	    if(PFCandidateVect[i].pt()>0.95) {
+              //std::cout << " debugggggggg 2! " << std::endl;
+              sigIP2D.push_back(PFCandidateVect[i].dxy()/PFCandidateVect[i].dxyError());
+
+              nPixelHits.push_back(PFCandidateVect[i].numberOfPixelHits());
+              nHits.push_back(PFCandidateVect[i].numberOfHits());
+
+              if (PFCandidateVect[i].numberOfPixelHits() == 0) nTracks0PixelHits++;
+              else if (PFCandidateVect[i].numberOfPixelHits() == 1) nTracks1PixelHit++;
+              else if (PFCandidateVect[i].numberOfPixelHits() == 2) nTracks2PixelHits++;
+              else if (PFCandidateVect[i].numberOfPixelHits() == 3) nTracks3PixelHits++;
+              else if (PFCandidateVect[i].numberOfPixelHits() == 4) nTracks4PixelHits++;
+              else if (PFCandidateVect[i].numberOfPixelHits() == 5) nTracks5PixelHits++;
+              else nTracksAtLeast6PixelHits++;
+
+              if (PFCandidateVect[i].lostInnerHits() == -1) nTracksValidHitInBPix1++;
+              else if (PFCandidateVect[i].lostInnerHits() == 0) nTracks0LostInnerHits++;
+              else if (PFCandidateVect[i].lostInnerHits() == 1) nTracks1LostInnerHit++;
+              else if (PFCandidateVect[i].lostInnerHits() == 2) nTracksAtLeast2LostInnerHits++;
+
+
+            } // pT selection
+	  } // charge
+	} // jet index
+      } // loop over PFCandidates
+
+      // TODO: Implement a median function to use for all vectors below:
+
+      if (sumPtPV.size() > 0) {
+	std::sort(sumPtPV.begin(), sumPtPV.end());
+	alphaMax = sumPtPV[sumPtPV.size()-1]/sumPtJet;
+      }
+      if (sigIP2D.size() > 0) {
+	std::sort(sigIP2D.begin(), sigIP2D.end());
+	if (sigIP2D.size() % 2 ==0) sigIP2DMedian = ((sigIP2D[sigIP2D.size()/2 -1] + sigIP2D[sigIP2D.size()/2]) /2);
+	else sigIP2DMedian = sigIP2D[sigIP2D.size()/2];
+      }
+      if (theta2D.size() > 0) {
+	std::sort(theta2D.begin(), theta2D.end());
+	if (theta2D.size() % 2 ==0) theta2DMedian = ((theta2D[theta2D.size()/2 -1] + theta2D[theta2D.size()/2]) /2);
+	else theta2DMedian = theta2D[theta2D.size()/2];
+      }
+      if (POCA_theta2D.size() > 0) {
+        std::sort(POCA_theta2D.begin(), POCA_theta2D.end());
+        if (POCA_theta2D.size() % 2 ==0) POCA_theta2DMedian = ((POCA_theta2D[POCA_theta2D.size()/2 -1] + POCA_theta2D[POCA_theta2D.size()/2]) /2);
+        else POCA_theta2DMedian = POCA_theta2D[POCA_theta2D.size()/2];
+      }
+      if (nPixelHits.size() > 0) {
+        std::sort(nPixelHits.begin(), nPixelHits.end());
+        if (nPixelHits.size() % 2 ==0) nPixelHitsMedian = ((nPixelHits[nPixelHits.size()/2 -1] + nPixelHits[nPixelHits.size()/2]) /2);
+        else nPixelHitsMedian = nPixelHits[nPixelHits.size()/2];
+      }
+      if (nHits.size() > 0) {
+        std::sort(nHits.begin(), nHits.end());
+        if (nHits.size() % 2 ==0) nHitsMedian = ((nHits[nHits.size()/2 -1] + nHits[nHits.size()/2]) /2);
+        else nHitsMedian = nHits[nHits.size()/2];
+      }
+
+      if (CHSJetsVect[j].hasTagInfo("pfSecondaryVertex")) {
+	reco::CandSecondaryVertexTagInfo const *svTagInfo = CHSJetsVect[j].tagInfoCandSecondaryVertex("pfSecondaryVertex");
+	bTagInfoVect.push_back(svTagInfo->clone());
+	reco::CandIPTagInfo const *ipTagInfo = CHSJetsVect[j].tagInfoCandIP("pfImpactParameter");
+        bTagIPInfoVect.push_back(ipTagInfo->clone());
+	indexSVJet.push_back(j);
+      }
+
+      CHSJetsVect[j].addUserFloat("alphaMax", alphaMax);
+      CHSJetsVect[j].addUserFloat("sigIP2DMedian", sigIP2DMedian);
+      CHSJetsVect[j].addUserFloat("theta2DMedian", theta2DMedian);
+      CHSJetsVect[j].addUserFloat("POCA_theta2DMedian", POCA_theta2DMedian);
+      CHSJetsVect[j].addUserFloat("nPixelHitsMedian", nPixelHitsMedian);
+      CHSJetsVect[j].addUserFloat("nHitsMedian", nHitsMedian);
+    
+      CHSJetsVect[j].addUserInt("nTracks0PixelHits", nTracks0PixelHits);
+      CHSJetsVect[j].addUserInt("nTracks1PixelHit", nTracks1PixelHit);
+      CHSJetsVect[j].addUserInt("nTracks2PixelHits", nTracks2PixelHits);
+      CHSJetsVect[j].addUserInt("nTracks3PixelHits", nTracks3PixelHits);
+      CHSJetsVect[j].addUserInt("nTracks4PixelHits", nTracks4PixelHits);
+      CHSJetsVect[j].addUserInt("nTracks5PixelHits", nTracks5PixelHits);
+      CHSJetsVect[j].addUserInt("nTracksAtLeast6PixelHits", nTracksAtLeast6PixelHits);
+      CHSJetsVect[j].addUserInt("nTracksValidHitInBPix1", nTracksValidHitInBPix1);
+      CHSJetsVect[j].addUserInt("nTracks0LostInnerHits", nTracks0LostInnerHits);
+      CHSJetsVect[j].addUserInt("nTracks1LostInnerHit", nTracks1LostInnerHit);
+      CHSJetsVect[j].addUserInt("nTracksAtLeast2LostInnerHits", nTracksAtLeast2LostInnerHits);
+
+    }//end of EXO-16-003 variables for AK4 Jets
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
    // Fill objects
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+
    if (WriteGenVBFquarks) for(unsigned int i = 0; i < GenVBFVect.size(); i++) ObjectsFormat::FillGenPType(GenVBFquarks[i], &GenVBFVect[i]);
    if (WriteGenHiggs) for(unsigned int i = 0; i < GenHiggsVect.size(); i++) ObjectsFormat::FillGenPType(GenHiggs, &GenHiggsVect[i]);
    if (WriteGenLLPs) for(unsigned int i = 0; i < GenLongLivedVect.size(); i++) ObjectsFormat::FillGenPType(GenLLPs[i], &GenLongLivedVect[i]);
@@ -636,6 +1103,7 @@ AODNtuplizer::beginJob()
    tree -> Branch("nPV" , &nPV , "nPV/L");
    tree -> Branch("isVBF" , &isVBF, "isVBF/O");
    tree -> Branch("HT" , &HT , "HT/F");
+   tree -> Branch("MinJetMetDPhi", &MinJetMetDPhi, "MinJetMetDPhi/F");
    tree -> Branch("nGenBquarks" , &nGenBquarks , "nGenBquarks/L");
    tree -> Branch("nGenLL" , &nGenLL , "nGenLL/L");
    tree -> Branch("gen_b_radius" , &gen_b_radius , "gen_b_radius/F");
@@ -646,10 +1114,18 @@ AODNtuplizer::beginJob()
    tree -> Branch("nPhotons", &nPhotons, "nPhotons/I");
    tree -> Branch("nTightMuons", &nTightMuons, "nTightMuons/I");
    tree -> Branch("nTightElectrons", &nTightElectrons, "nTightElectrons/I");
+   tree -> Branch("nPFCandidates" , &nPFCandidates, "nPFCandidates/I");
+   tree -> Branch("nPFCandidatesTrack", &nPFCandidatesTrack, "nPFCandidatesTrack/I");
+   tree -> Branch("nPFCandidatesHighPurityTrack", &nPFCandidatesHighPurityTrack, "nPFCandidatesHighPurityTrack/I");
+   tree -> Branch("nPFCandidatesFullTrackInfo", &nPFCandidatesFullTrackInfo, "nPFCandidatesFullTrackInfo/I");
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    tree -> Branch("nJets" , &nJets , "nJets/L");
    tree -> Branch("nCaloJets" , &nCaloJets , "nCaloJets/L");
+   tree -> Branch("nMatchedCHSJets" , &nMatchedCHSJets , "nMatchedCHSJets/L");
+   tree -> Branch("nMatchedCaloJets" , &nMatchedCaloJets , "nMatchedCaloJets/L");
+   tree -> Branch("number_of_b_matched_to_CHSJets", &number_of_b_matched_to_CHSJets, "number_of_b_matched_to_CHSJets/L");
+   tree -> Branch("number_of_b_matched_to_CaloJets", &number_of_b_matched_to_CaloJets, "number_of_b_matched_to_CaloJets/L");
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    // Set trigger branches

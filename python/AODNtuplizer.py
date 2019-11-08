@@ -776,6 +776,14 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         photonid = cms.int32(1), # 1: loose, 2: medium, 3: tight, 4:MVA NonTrig medium
         photonpt = cms.double(15.),
     ),
+    vertexSet = cms.PSet(
+        primaryVertices = cms.InputTag('offlinePrimaryVertices'),
+        secondaryVertices =  cms.InputTag('inclusiveCandidateSecondaryVertices'),
+    ),
+    pfCandidateSet = cms.PSet(
+        pfCandidates = cms.InputTag('packedPFCandidates'),
+        lostTracks = cms.InputTag('lostTracks'),
+    ),
     minGenBpt = cms.double(15.),#gen b quarks in acceptance
     maxGenBeta = cms.double(2.4),#gen b quarks in acceptance
     #invmassVBF = cms.double(400.?),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
@@ -790,6 +798,11 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeGenLLPs = cms.bool(True),
     writeOnlyTriggerEvents = cms.bool(True),#slims down ntuples a lot
     writeOnlyisVBFEvents = cms.bool(True),#slims down ntuples a lot
+    ## PFCandidates:
+    writeAK4JetPFCandidates = cms.bool(False), #Matched to AK4 only!
+    writeAK8JetPFCandidates = cms.bool(False), #Matched to AK8 only!
+    writeAllJetPFCandidates = cms.bool(True), #Matched to either AK4 or AK8
+    writeAllPFCandidates = cms.bool(False), #All PFCandidates. Large collection: Please write only if needed!
     performPreFiringStudies = cms.bool(True if ('unprefirable' in process.source.fileNames[0]) else False),
 )
 
