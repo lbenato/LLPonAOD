@@ -44,19 +44,35 @@
 #include "DataFormats/JetReco/interface/PFJetCollection.h"
 
 //Pat classes
+#include "DataFormats/PatCandidates/interface/MET.h"
+#include "DataFormats/PatCandidates/interface/Jet.h"
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "DataFormats/PatCandidates/interface/Muon.h"
+#include "DataFormats/PatCandidates/interface/Electron.h"
+#include "RecoEgamma/EgammaTools/interface/ConversionTools.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "TTree.h"
 #include <string>
 
+#include "JetAnalyzer.h"
 #include "RecoJetAnalyzer.h"
 #include "CaloJetAnalyzer.h"
 #include "GenAnalyzer.h"
 #include "PileupAnalyzer.h"
+#include "RecoTriggerAnalyzer.h"
 #include "TriggerAnalyzer.h"
+#include "ElectronAnalyzer.h"
+#include "RecoElectronAnalyzer.h"
 #include "MuonAnalyzer.h"
+#include "TauAnalyzer.h"
+#include "PhotonAnalyzer.h"
+#include "RecoPhotonAnalyzer.h"
+#include "RecoObjects.h"
+#include "RecoObjectsFormat.h"
 #include "Objects.h"
 #include "ObjectsFormat.h"
 
@@ -90,17 +106,24 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::ParameterSet CHSJetPSet;
     edm::ParameterSet CaloJetPSet;
     edm::ParameterSet VBFJetPSet;
+    edm::ParameterSet ElectronPSet;
     edm::ParameterSet MuonPSet;
+    edm::ParameterSet TauPSet;
+    edm::ParameterSet PhotonPSet;
     edm::EDGetTokenT<reco::PFJetCollection> jetToken;
+    //edm::EDGetTokenT<std::vector<pat::MET> > metToken;
 
 
-    RecoJetAnalyzer* theCHSJetAnalyzer;
+    JetAnalyzer* theCHSJetAnalyzer;
     CaloJetAnalyzer* theCaloJetAnalyzer;
-    RecoJetAnalyzer* theVBFJetAnalyzer;
+    JetAnalyzer* theVBFJetAnalyzer;
     GenAnalyzer* theGenAnalyzer;
     PileupAnalyzer* thePileupAnalyzer;
-    TriggerAnalyzer* theTriggerAnalyzer;
+    RecoTriggerAnalyzer* theRecoTriggerAnalyzer;
+    RecoElectronAnalyzer* theRecoElectronAnalyzer;
     MuonAnalyzer* theMuonAnalyzer;
+    TauAnalyzer* theTauAnalyzer;
+    RecoPhotonAnalyzer* theRecoPhotonAnalyzer;
 
     double MinGenBpt, MaxGenBeta;
     double InvmassVBF, DetaVBF;//VBF tagging
@@ -109,7 +132,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool PerformPreFiringStudies;
 
     std::vector<JetType> CHSJets;
-    //std::vector<JetType> ManualJets;
+    //std::vector<RecoJetType> ManualJets;
     std::vector<CaloJetType> CaloJets;
     //std::vector<LeptonType> Muons; //maybe later!
     std::vector<GenPType> GenVBFquarks;
@@ -118,6 +141,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     GenPType GenHiggs;
 
     MEtType MEt;
+    //RecoMEtType RecoMEt;
     CandidateType VBF;//VBF tagging
 
     std::map<std::string, bool> TriggerMap;
@@ -133,7 +157,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int nJets;
     long int nCaloJets;
     long int nElectrons, nMuons, nTaus, nPhotons;
-    long int nTightMuons;
+    long int nTightMuons, nTightElectrons;
     AddFourMomenta addP4;
     float HT;
     float MinJetMetDPhi;
@@ -169,7 +193,10 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    CHSJetPSet(iConfig.getParameter<edm::ParameterSet>("chsJetSet")),
    CaloJetPSet(iConfig.getParameter<edm::ParameterSet>("caloJetSet")),
    VBFJetPSet(iConfig.getParameter<edm::ParameterSet>("vbfJetSet")),
+   ElectronPSet(iConfig.getParameter<edm::ParameterSet>("electronSet")),
    MuonPSet(iConfig.getParameter<edm::ParameterSet>("muonSet")),
+   TauPSet(iConfig.getParameter<edm::ParameterSet>("tauSet")),
+   PhotonPSet(iConfig.getParameter<edm::ParameterSet>("photonSet")),
    MinGenBpt(iConfig.getParameter<double>("minGenBpt")),
    MaxGenBeta(iConfig.getParameter<double>("maxGenBeta")),
    InvmassVBF(iConfig.getParameter<double>("invmassVBF")),
@@ -184,13 +211,16 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
 
 {
 
-   theCHSJetAnalyzer      = new RecoJetAnalyzer(CHSJetPSet, consumesCollector());
+   theCHSJetAnalyzer      = new JetAnalyzer(CHSJetPSet, consumesCollector());
    theCaloJetAnalyzer     = new CaloJetAnalyzer(CaloJetPSet, consumesCollector());
-   theVBFJetAnalyzer      = new RecoJetAnalyzer(VBFJetPSet, consumesCollector());
+   theVBFJetAnalyzer      = new JetAnalyzer(VBFJetPSet, consumesCollector());
    theGenAnalyzer         = new GenAnalyzer(GenPSet, consumesCollector());
    thePileupAnalyzer      = new PileupAnalyzer(PileupPSet, consumesCollector());
-   theTriggerAnalyzer     = new TriggerAnalyzer(TriggerPSet, consumesCollector());
+   theRecoTriggerAnalyzer     = new RecoTriggerAnalyzer(TriggerPSet, consumesCollector());
+   theRecoElectronAnalyzer    = new RecoElectronAnalyzer(ElectronPSet, consumesCollector());
    theMuonAnalyzer        = new MuonAnalyzer(MuonPSet, consumesCollector());
+   theTauAnalyzer         = new TauAnalyzer(TauPSet, consumesCollector());
+   theRecoPhotonAnalyzer      = new RecoPhotonAnalyzer(PhotonPSet, consumesCollector());
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
@@ -203,6 +233,9 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    edm::InputTag IT_jets = edm::InputTag("ak4PFJetsCHS");
    jetToken = consumes<reco::PFJetCollection>(IT_jets);
 
+   ////edm::InputTag IT_met = edm::InputTag("patMETs");
+   ////edm::InputTag IT_met = edm::InputTag("slimmedMETs");
+   ////metToken = consumes<std::vector<pat::MET>>(IT_met);
    //now do what ever initialization is needed
    usesResource("TFileService");
 
@@ -221,8 +254,11 @@ AODNtuplizer::~AODNtuplizer()
    delete theVBFJetAnalyzer;
    delete theGenAnalyzer;
    delete thePileupAnalyzer;
-   delete theTriggerAnalyzer;
+   delete theRecoTriggerAnalyzer;
+   delete theRecoElectronAnalyzer;
    delete theMuonAnalyzer;
+   delete theTauAnalyzer;
+   delete theRecoPhotonAnalyzer;
 
 }
 
@@ -245,8 +281,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
    nJets = nCaloJets = 0;
-   nElectrons = nMuons = nTaus = nPhotons = 999;
-   nTightMuons = 0;
+   nElectrons = nMuons = nTaus = nPhotons = 0;
+   nTightMuons = nTightElectrons = 0;
    isMC = false;
    isVBF = false;
    EventNumber = LumiNumber = RunNumber = nPV = 0;
@@ -276,11 +312,11 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
 
    //if(isVerbose) std::cout << "Trigger and met filters" << std::endl;
-   theTriggerAnalyzer->FillTriggerMap(iEvent, TriggerMap);
-   //theTriggerAnalyzer->FillMetFiltersMap(iEvent, MetFiltersMap);
-   BadPFMuonFlag = theTriggerAnalyzer->GetBadPFMuonFlag(iEvent);
-   BadChCandFlag = theTriggerAnalyzer->GetBadChCandFlag(iEvent);
-   //theTriggerAnalyzer->FillL1FiltersMap(iEvent, L1FiltersMap);
+   theRecoTriggerAnalyzer->FillTriggerMap(iEvent, TriggerMap);
+   //theRecoTriggerAnalyzer->FillMetFiltersMap(iEvent, MetFiltersMap);
+   BadPFMuonFlag = theRecoTriggerAnalyzer->GetBadPFMuonFlag(iEvent);
+   BadChCandFlag = theRecoTriggerAnalyzer->GetBadChCandFlag(iEvent);
+   //theRecoTriggerAnalyzer->FillL1FiltersMap(iEvent, L1FiltersMap);
 
    // 27 Sep 2018: saving only events that fired at least one trigger, to reduce output size
    for(auto it = TriggerMap.begin(); it != TriggerMap.end(); it++)
@@ -299,7 +335,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //Pre-firing
    if(PerformPreFiringStudies)
      {
-         Prefired = theTriggerAnalyzer->EvaluatePrefiring(iEvent);
+         Prefired = theRecoTriggerAnalyzer->EvaluatePrefiring(iEvent);
      }
 
    //------------------------------------------------------------------------------------------
@@ -307,7 +343,27 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    // HT
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
+
    HT = theCHSJetAnalyzer->CalculateHT(iEvent,3,15,3.);
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // Electrons
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   ////if(isVerbose) std::cout << "Electrons" << std::endl;
+   std::vector<reco::GsfElectron> ElecVect = theRecoElectronAnalyzer->FillElectronVector(iEvent);
+   //std::vector<reco::GsfElectron> TightElecVect;
+
+   //for(unsigned int a = 0; a<ElecVect.size(); a++)
+   //   {
+	//if(ElecVect.at(a).hasUserInt("isTight") && ElecVect.at(a).userInt("isTight")>0)
+	  //{
+	    //TightElecVect.push_back(ElecVect.at(a));
+	    //nTightElectrons++;
+	  //}
+     //}
+   nElectrons = ElecVect.size();
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -329,12 +385,44 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
+   // Taus
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   ////if(isVerbose) std::cout << "Taus" << std::endl;
+   std::vector<pat::Tau> TauVect = theTauAnalyzer->FillTauVector(iEvent);
+   theTauAnalyzer->CleanTausFromMuons(TauVect, MuonVect, 0.4);
+   theTauAnalyzer->CleanTausFromRecoElectrons(TauVect, ElecVect, 0.4);
+   nTaus = TauVect.size();
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // Photons
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   //if(isVerbose) std::cout << "Photons" << std::endl;
+   std::vector<reco::Photon> PhotonVect = theRecoPhotonAnalyzer->FillPhotonVector(iEvent);
+   nPhotons = PhotonVect.size();
+
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
    // Missing Energy
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
    //if(isVerbose) std::cout << "MET" << std::endl;
-   reco::PFMET MET = theCHSJetAnalyzer->FillMetVector(iEvent);
-
+   //reco::PFMET RecoMET = theCHSJetAnalyzer->FillRecoMetVector(iEvent);
+   pat::MET MET = theCHSJetAnalyzer->FillMetVector(iEvent);
+   //For debugging:
+   ////edm::Handle<std::vector<pat::MET> > MetCollection;
+   ////iEvent.getByToken(metToken, MetCollection);
+   ////pat::MET MET = MetCollection->front();
+   //std::cout << " MET features: " << std::endl;
+   //std::cout << MET.pt() << std::endl;
+   //std::cout << MET.metSignificance() << std::endl;
+   //if(MET.caloMETPt()) std::cout << MET.caloMETPt() << std::endl;
+   //if(MET.genMET()) std::cout << MET.genMET()->pt()<<std::endl;
+   //std::cout << MET.uncorPt() << std::endl;
+   //if(MET.shiftedPt(pat::MET::METUncertainty::UnclusteredEnDown)) std::cout << MET.shiftedPt(pat::MET::METUncertainty::UnclusteredEnDown)<<std::endl;
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -390,8 +478,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
 
-   std::vector<reco::PFJet> VBFJetsVect = theVBFJetAnalyzer->FillJetVector(iEvent);
-   reco::CompositeCandidate theVBF;
+   std::vector<pat::Jet> VBFJetsVect = theVBFJetAnalyzer->FillJetVector(iEvent);
+   pat::CompositeCandidate theVBF;
    std::vector<pat::Jet> VBFPairJetsVect;
    
    float delta_eta_reco (0.), curr_delta_eta_reco(0.) ;
@@ -444,16 +532,16 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    // AK4 CHS jets
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
-   std::vector<reco::PFJet> CHSJetsVect = theCHSJetAnalyzer->FillJetVector(iEvent);
+   std::vector<pat::Jet> CHSJetsVect = theCHSJetAnalyzer->FillJetVector(iEvent);
 
    //Filling Jet structure manually, without filling a vector first. Used as cross-check.
    //for(reco::PFJetCollection::const_iterator it=JetColl->begin(); it!=JetColl->end(); ++it) {
    //   if(it->pt()>15 and abs(it->eta())<2.4) 
    //	{
    //	  reco::Jet jet=*it;
-   //     ManualJets.push_back( JetType() );
-   //     ObjectsFormat::ResetJetType(ManualJets[nJets]);
-   //     ObjectsFormat::FillJetType(ManualJets[nJets], &jet, isMC);
+   //     ManualJets.push_back( RecoJetType() );
+   //     RecoObjectsFormat::ResetRecoJetType(ManualJets[nJets]);
+   //     RecoObjectsFormat::FillRecoJetType(ManualJets[nJets], &jet, isMC);
    //     nJets++;
    //   }
    //}
@@ -495,8 +583,9 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    if (WriteGenHiggs) for(unsigned int i = 0; i < GenHiggsVect.size(); i++) ObjectsFormat::FillGenPType(GenHiggs, &GenHiggsVect[i]);
    if (WriteGenLLPs) for(unsigned int i = 0; i < GenLongLivedVect.size(); i++) ObjectsFormat::FillGenPType(GenLLPs[i], &GenLongLivedVect[i]);
    if (WriteGenBquarks) for(unsigned int i = 0; i < GenBquarksVect.size(); i++) ObjectsFormat::FillGenPType(GenBquarks[i], &GenBquarksVect[i]);
-   ObjectsFormat::FillMEtType(MEt, &MET, isMC);
-   ObjectsFormat::FillCandidateType(VBF, &theVBF, isMC);
+   //RecoObjectsFormat::FillRecoMEtType(RecoMEt, &RecoMET, isMC);//wait, to be fixed
+   ObjectsFormat::FillMEtType(MEt, &MET, isMC);//wait, to be fixed
+   ObjectsFormat::FillCandidateType(VBF, &theVBF, isMC);//wait, to be fixed
 
    for(unsigned int i = 0; i < CHSJetsVect.size(); i++) CHSJets.push_back( JetType() );
    for(unsigned int i = 0; i < CHSJetsVect.size(); i++){
@@ -551,8 +640,12 @@ AODNtuplizer::beginJob()
    tree -> Branch("nGenLL" , &nGenLL , "nGenLL/L");
    tree -> Branch("gen_b_radius" , &gen_b_radius , "gen_b_radius/F");
    tree -> Branch("m_pi" , &m_pi , "m_pi/F");
+   tree -> Branch("nElectrons", &nElectrons, "nElectrons/I");
    tree -> Branch("nMuons", &nMuons, "nMuons/I");
+   tree -> Branch("nTaus", &nTaus, "nTaus/I");
+   tree -> Branch("nPhotons", &nPhotons, "nPhotons/I");
    tree -> Branch("nTightMuons", &nTightMuons, "nTightMuons/I");
+   tree -> Branch("nTightElectrons", &nTightElectrons, "nTightElectrons/I");
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    tree -> Branch("nJets" , &nJets , "nJets/L");
@@ -568,10 +661,11 @@ AODNtuplizer::beginJob()
    tree -> Branch("GenHiggs", &GenHiggs.pt, ObjectsFormat::ListGenPType().c_str());
    tree -> Branch("GenLLPs", &GenLLPs);
    tree -> Branch("GenBquarks", &GenBquarks);
+   //tree -> Branch("RecoMEt", &RecoMEt.pt, RecoObjectsFormat::ListRecoMEtType().c_str());
    tree -> Branch("MEt", &MEt.pt, ObjectsFormat::ListMEtType().c_str());
    tree -> Branch("CHSJets", &CHSJets);
    tree -> Branch("CaloJets", &CaloJets);
-   tree -> Branch("VBFPair", &VBF.pt, ObjectsFormat::ListCandidateType().c_str());
+   tree -> Branch("VBFPair", &VBF.pt, ObjectsFormat::ListCandidateType().c_str());//wait!
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

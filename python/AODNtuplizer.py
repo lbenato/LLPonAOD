@@ -19,7 +19,7 @@ process.options   = cms.untracked.PSet(
 process.load("FWCore.MessageService.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 10
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(100) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
@@ -54,7 +54,7 @@ if RunLocal:
     noLHEinfo = True if ('WW_TuneCUETP8M1_13TeV-pythia8' or 'WZ_TuneCUETP8M1_13TeV-pythia8' or 'ZZ_TuneCUETP8M1_13TeV-pythia8') in process.source.fileNames[0] else False #check for PythiaLO samples
     isbbH = True if ('bbHToBB_M-125_4FS_yb2_13TeV_amcatnlo' in process.source.fileNames[0]) else False #bbH has a different label in LHEEventProduct
     isSignal = True if ('HToSSTobbbb_MH-125' in process.source.fileNames[0]) else False
-    isCalo   = False #HERE for calo analyses!!!
+    isCalo   = True #HERE for calo analyses!!!
 
 else:
     isData            = options.PisData
@@ -192,10 +192,18 @@ process.puppiNoLep.candName = cms.InputTag('pfNoLepPUPPI')
 #packedPFCandidates
 process.load('PhysicsTools.PatAlgos.slimming.packedPFCandidates_cff')
 
+#lostTracks
+process.load('PhysicsTools.PatAlgos.slimming.lostTracks_cfi')
+
 #Vertex association and slimmed vertices
 process.load('PhysicsTools.PatAlgos.slimming.primaryVertexAssociation_cfi')
 process.primaryVertexAssociation.jets = cms.InputTag("ak4PFJets")
 process.load('PhysicsTools.PatAlgos.slimming.offlineSlimmedPrimaryVertices_cfi')
+
+#genParticles
+process.load('PhysicsTools.PatAlgos.slimming.genParticles_cff')
+#trigger
+process.load('PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi')
 
 #slimmedMuons
 process.load('PhysicsTools.PatAlgos.producersLayer1.muonProducer_cff')
@@ -203,38 +211,69 @@ process.load('PhysicsTools.PatAlgos.selectionLayer1.muonSelector_cfi')
 process.selectedPatMuons.cut = cms.string("pt > 5 || isPFMuon || (pt > 3 && (isGlobalMuon || isStandAloneMuon || numberOfMatches > 0 || muonID(\'RPCMuLoose\')))")
 process.load('PhysicsTools.PatAlgos.slimming.slimmedMuons_cfi')
 
-#slimmedElectrons
-process.load('PhysicsTools.PatAlgos.producersLayer1.electronProducer_cff')
-#we might need to add stuff for electrons
-process.load('PhysicsTools.PatAlgos.selectionLayer1.electronSelector_cfi')
-process.load('PhysicsTools.PatAlgos.slimming.slimmedElectrons_cfi')
+#reducedEgamma
+process.load('RecoEgamma.EgammaPhotonProducers.reducedEgamma_cfi')
+process.load('RecoEgamma.EgammaTools.egammaObjectModificationsInMiniAOD_cff')
 
-#slimmedPhotons
+#patElectrons
+process.load('PhysicsTools.PatAlgos.producersLayer1.electronProducer_cff')
+
+#patPhotons
 process.load('PhysicsTools.PatAlgos.producersLayer1.photonProducer_cff')
-#we might need to add stuff for photons
-process.load('PhysicsTools.PatAlgos.selectionLayer1.photonSelector_cfi')
-process.load('PhysicsTools.PatAlgos.slimming.slimmedPhotons_cfi')
 
 #slimmedTaus
 process.load('PhysicsTools.PatAlgos.producersLayer1.tauProducer_cff')
-#we might need to add stuff for taus
 process.load('PhysicsTools.PatAlgos.selectionLayer1.tauSelector_cfi')
 process.selectedPatTaus.cut = cms.string("pt > 18. && tauID(\'decayModeFindingNewDMs\')> 0.5")
 process.load('PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi')
 
+
+'''
 #slimmedJets
 process.load('PhysicsTools.PatAlgos.producersLayer1.jetProducer_cff')
 ##we might need to add stuff, cross-check
 process.load('PhysicsTools.PatAlgos.selectionLayer1.jetSelector_cfi')
-process.selectedPatJets.cut = cms.string("pt > 5.")#no 10!
+process.selectedPatJets.cut = cms.string("pt > 5.")#default is 10!
 #here: AK8 missing, work on that
 #process.load('PhysicsTools.PatAlgos.slimming.slimmedJets_cfi')
+'''
 
 #-----------------------#
 #  E-MU-GAMMA MODULES   #
 #-----------------------#
 
+#electron/photon ID maps
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+switchOnVIDElectronIdProducer(process, DataFormat.AOD)
+ele_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
+                  'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff',
+                  'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff']
+
+for ele_idmod in ele_id_modules:
+    setupAllVIDIdsInModule(process,ele_idmod,setupVIDElectronSelection)
+
+process.heepIDVarValueMaps.dataFormat = cms.int32(1)#0 = auto detection, 1 = AOD, 2 = miniAOD
+process.load('PhysicsTools.PatAlgos.selectionLayer1.electronSelector_cfi')
+process.load('PhysicsTools.PatAlgos.slimming.slimmedElectrons_cfi')
+
+#photons upstream modules
+from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
+switchOnVIDPhotonIdProducer(process, DataFormat.AOD)
+
+ph_id_modules = ['RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring16_V2p2_cff',
+                 'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Spring16_nonTrig_V1_cff']
+
+for ph_idmod in ph_id_modules:
+    setupAllVIDIdsInModule(process,ph_idmod,setupVIDPhotonSelection)
+
+process.load('PhysicsTools.PatAlgos.selectionLayer1.photonSelector_cfi')
+process.load('PhysicsTools.PatAlgos.slimming.slimmedPhotons_cfi')
+
+
 #electron/photon regression modules
+'''
+Do we really need that? It looks like slimmedElectrons are needed as input...
+
 from EgammaAnalysis.ElectronTools.regressionWeights_cfi import regressionWeights
 process = regressionWeights(process)
 
@@ -263,23 +302,7 @@ from EgammaAnalysis.ElectronTools.calibratedPatPhotonsRun2_cfi import *
 process.EGMSmearerPhotons = calibratedPatPhotons.clone(
   isMC = cms.bool(False if isData else True)
 )
-
-
-from PhysicsTools.SelectorUtils.tools.vid_id_tools import *
-switchOnVIDElectronIdProducer(process, DataFormat.MiniAOD)
-ele_id_modules = ['RecoEgamma.ElectronIdentification.Identification.cutBasedElectronID_Summer16_80X_V1_cff',
-                  'RecoEgamma.ElectronIdentification.Identification.heepElectronID_HEEPV70_cff',
-                  'RecoEgamma.ElectronIdentification.Identification.mvaElectronID_Spring16_GeneralPurpose_V1_cff']
-
-for ele_idmod in ele_id_modules:
-    setupAllVIDIdsInModule(process,ele_idmod,setupVIDElectronSelection)
-
-#photons upstream modules
-switchOnVIDPhotonIdProducer(process, DataFormat.MiniAOD)
-ph_id_modules = ['RecoEgamma.PhotonIdentification.Identification.cutBasedPhotonID_Spring16_V2p2_cff',
-                 'RecoEgamma.PhotonIdentification.Identification.mvaPhotonID_Spring16_nonTrig_V1_cff']
-for ph_idmod in ph_id_modules:
-    setupAllVIDIdsInModule(process,ph_idmod,setupVIDPhotonSelection)
+'''
 
 
 #muons upstream modules
@@ -289,6 +312,9 @@ process.cleanedMuons = cms.EDProducer('PATMuonCleanerBySegments',
                                       passthrough = cms.string('isGlobalMuon && numberOfMatches >= 2'),
                                       fractionOfSharedSegments = cms.double(0.499)
                                       )
+
+
+
 
 #-----------------------#
 #        FILTERS        #
@@ -323,6 +349,151 @@ process.BadPFMuonFilter.PFCandidates = cms.InputTag('packedPFCandidates')
 process.load('RecoMET.METFilters.BadChargedCandidateFilter_cfi')
 process.BadChargedCandidateFilter.muons = cms.InputTag('slimmedMuons')
 process.BadChargedCandidateFilter.PFCandidates = cms.InputTag('packedPFCandidates')
+
+#-----------------------#
+#  b TAGGING tagInfos   #
+#-----------------------#
+
+bTagInfos = [
+    'pfImpactParameterTagInfos'
+   ,'pfSecondaryVertexTagInfos'
+   ,'pfInclusiveSecondaryVertexFinderTagInfos'
+]
+
+bTagDiscriminators = [
+   'pfCombinedInclusiveSecondaryVertexV2BJetTags',
+   'pfCombinedSecondaryVertexV2BJetTags',
+   'pfBoostedDoubleSecondaryVertexAK8BJetTags'
+   ]
+
+
+# # taken from here: https://github.com/cms-sw/cmssw/blob/02d4198c0b6615287fd88e9a8ff650aea994412e/RecoBTag/ImpactParameter/python/impactParameterTagInfos_cfi.py
+process.load("RecoBTag.ImpactParameter.pfImpactParameterTagInfos_cfi")
+process.pfImpactParameterTagInfos.primaryVertex = cms.InputTag("offlineSlimmedPrimaryVertices")
+process.pfImpactParameterTagInfos.maximumChiSquared = cms.double(99999.9)
+process.pfImpactParameterTagInfos.maximumLongitudinalImpactParameter = cms.double(99999.9)
+process.pfImpactParameterTagInfos.maximumTransverseImpactParameter = cms.double(99999.9)
+process.pfImpactParameterTagInfos.minimumNumberOfHits = cms.int32(0)
+process.pfImpactParameterTagInfos.minimumNumberOfPixelHits = cms.int32(1)#at least 1, otherwise tracking issues!13Dec
+process.pfImpactParameterTagInfos.minimumTransverseMomentum = cms.double(1.0)
+process.pfImpactParameterTagInfos.computeGhostTrack = cms.bool(True)
+
+process.TransientTrackBuilderESProducer = cms.ESProducer("TransientTrackBuilderESProducer",
+    ComponentName = cms.string('TransientTrackBuilder')
+)
+
+process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+
+process.load("Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff")
+
+process.load("RecoBTag.SecondaryVertex.pfSecondaryVertexTagInfos_cfi")
+process.load('RecoBTag/SecondaryVertex/pfInclusiveSecondaryVertexFinderTagInfos_cfi')
+process.load("RecoBTag.SecondaryVertex.pfSecondaryVertexNegativeTagInfos_cfi")
+process.load('RecoBTag/SecondaryVertex/pfInclusiveSecondaryVertexFinderNegativeTagInfos_cfi')
+process.load('RecoBTag/CTagging/pfInclusiveSecondaryVertexFinderCvsLTagInfos_cfi')
+process.load('RecoBTag/CTagging/pfInclusiveSecondaryVertexFinderNegativeCvsLTagInfos_cfi')
+
+for n in ['pfSecondaryVertexTagInfos', 'pfInclusiveSecondaryVertexFinderTagInfos', 'pfSecondaryVertexNegativeTagInfos', 'pfInclusiveSecondaryVertexFinderNegativeTagInfos', 'pfInclusiveSecondaryVertexFinderCvsLTagInfos', 'pfInclusiveSecondaryVertexFinderNegativeCvsLTagInfos']:
+    setattr( getattr(process,n), 'useExternalSV', cms.bool(False) )
+    setattr( getattr(process,n), 'extSVCollection', cms.InputTag("") )
+    setattr( getattr(process,n), 'useSVClustering', cms.bool(True) )
+    setattr( getattr(process,n), 'jetAlgorithm', cms.string("AntiKt") )
+    setattr( getattr(process,n), 'rParam', cms.double(0.4) )
+    setattr( getattr(process,n), 'trackSelection', cms.PSet(
+            max_pT = cms.double(99999.9),
+            max_pT_dRcut = cms.double(99999.9),
+            max_pT_trackPTcut = cms.double(99999.9),
+            min_pT = cms.double(-99999.9),
+            min_pT_dRcut = cms.double(-99999.9),
+            pixelHitsMin = cms.uint32(0),
+            totalHitsMin = cms.uint32(0)
+            ))
+    setattr( getattr(process,n), 'vertexCuts', cms.PSet(
+            distVal2dMax = cms.double(99999.9),
+            distSig2dMin = cms.double(-99999.9),
+            distSig2dMax = cms.double(99999.9),
+            distVal2dMin = cms.double(-99999.9),
+            minimumTrackWeight = cms.double(-99999.9),
+            massMax = cms.double(99999.9)
+))
+
+process.load('RecoBTag/SoftLepton/softPFMuonTagInfos_cfi')
+process.load('RecoBTag/SoftLepton/softPFElectronTagInfos_cfi')
+
+#-----------------------#
+#       AK4 JETS        #
+#-----------------------#
+pt_AK8 = 170 #dummy
+#Jet labels
+if isCalo:
+   chosen_JEC = "AK4PFchs"
+   chosen_jet_source = 'ak4PFJetsCHS'
+   chosen_label = ''#'Reclustered'
+   chosen_pfcand = 'pfCHS'
+   chosen_jets = "patJets"+ chosen_label
+   pt_AK4 = 5
+else:
+   chosen_jets = "slimmedJets"
+   pt_AK4 = 15
+
+## packedPFCandidates with CHS are used by both AK4 and AK8
+process.pfCHS = cms.EDFilter("CandPtrSelector", src = cms.InputTag("packedPFCandidates"), cut = cms.string("fromPV"))
+
+## Filter out neutrinos from packed GenParticles
+process.packedGenParticlesForJetsNoNu = cms.EDFilter("CandPtrSelector", src = cms.InputTag("packedGenParticles"), cut = cms.string("abs(pdgId) != 12 && abs(pdgId) != 14 && abs(pdgId) != 16"))
+
+## Define GenJets
+from RecoJets.JetProducers.ak4GenJets_cfi import ak4GenJets
+process.ak4GenJetsNoNu = ak4GenJets.clone(src = 'packedGenParticlesForJetsNoNu')
+
+if isCalo:
+
+   print "% % % % % % % % % % % % % % % % % % % % % % % % % %"
+   print "Performing AK4PFchs jet reclustering, pT = "+str(pt_AK4)+" GeV"
+   print "% % % % % % % % % % % % % % % % % % % % % % % % % %"
+
+   ##Recluster reco jets
+   #from RecoJets.JetProducers.ak4PFJets_cfi import ak4PFJets
+   ##non CHS
+   ##process.ak4PFJets = ak4PFJets.clone(src = 'packedPFCandidates', doAreaFastjet = True, jetPtMin = pt_AK4)
+   #process.ak4PFJetsCHSCustom = ak4PFJets.clone(src = "pfCHS", doAreaFastjet = True, jetPtMin = pt_AK4)
+
+   from PhysicsTools.PatAlgos.tools.jetTools import *
+   addJetCollection(
+      process,
+      labelName = chosen_label,#'Reclustered',
+      jetSource = cms.InputTag(chosen_jet_source),#reco jets
+      pvSource = cms.InputTag('offlineSlimmedPrimaryVertices'),
+      pfCandidates = cms.InputTag(chosen_pfcand),#pfchs substracted
+      svSource = cms.InputTag('slimmedSecondaryVertices'),
+      btagDiscriminators = list(bTagDiscriminators),#btagging
+      btagInfos = bTagInfos,
+      jetCorrections = (chosen_JEC, ['L1FastJet', 'L2Relative', 'L3Absolute'], 'None'),#correct JEC
+      genJetCollection = cms.InputTag('ak4GenJetsNoNu'),
+      genParticles = cms.InputTag('prunedGenParticles'),
+      algo = 'AK',
+      rParam = 0.4
+      )
+
+#slimmedMETs
+process.load('PhysicsTools.PatAlgos.producersLayer1.metProducer_cff')
+process.patMETs.computeMETSignificance = cms.bool(True)
+process.patMETs.srcJets = cms.InputTag("patJets")
+process.load('PhysicsTools.PatAlgos.selectionLayer1.metSelector_cfi')
+
+#Calculating met corrections, uncertainties and slimmed mets
+from PhysicsTools.PatUtils.tools.runMETCorrectionsAndUncertainties import *
+runMetCorAndUncForMiniAODProduction(process,
+                           jetSelection="pt>5 && abs(eta)<9.9",#this is important!
+                           )
+
+from PhysicsTools.PatAlgos.producersLayer1.metProducer_cfi import patMETs
+process.patCaloMet = patMETs.clone(
+    metSource = cms.InputTag('caloMetM'),
+    addMuonCorrections = cms.bool(False),
+    genMETSource = cms.InputTag('genMetTrue')
+)
+process.load('PhysicsTools.PatAlgos.slimming.slimmedMETs_cfi')
 
 #-----------------------#
 #       ANALYZER        #
@@ -391,16 +562,16 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         #l1filters = cms.vstring('hltL1sTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBFIorHTT300','hltL1sDoubleJetC112','hltL1sQuadJetC50IorQuadJetC60IorHTT280IorHTT300IorHTT320IorTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBF','hltL1sTripleJetVBFIorHTTIorDoubleJetCIorSingleJet','hltL1sSingleMu22','hltL1sV0SingleMu22IorSingleMu25','hltL1sZeroBias','hltL1sSingleJet60','hltL1sSingleJet35','hltTripleJet50','hltDoubleJet65','hltSingleJet80','hltVBFFilterDisplacedJets'),
     ),
     chsJetSet = cms.PSet(
-        jets = cms.InputTag('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(chosen_jets),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
         jet1pt = cms.double(5),
         jet2pt = cms.double(5),
         jeteta = cms.double(2.4),
-        #addQGdiscriminator = cms.bool(False),
+        addQGdiscriminator = cms.bool(False),
         recalibrateJets = cms.bool(True),#(True),
         recalibrateMass = cms.bool(False),
-        #recalibratePuppiMass = cms.bool(False),
-        #softdropPuppiMassString = cms.string("ak8PFJetsPuppiValueMap:ak8PFJetsPuppiSoftDropMass" if pt_AK8<170 else "ak8PFJetsPuppiSoftDropMass"),
+        recalibratePuppiMass = cms.bool(False),
+        softdropPuppiMassString = cms.string("ak8PFJetsPuppiValueMap:ak8PFJetsPuppiSoftDropMass" if pt_AK8<170 else "ak8PFJetsPuppiSoftDropMass"),
         smearJets = cms.bool(False),#just for comparison!
         vertices = cms.InputTag('offlinePrimaryVertices'),
         rho = cms.InputTag('fixedGridRhoFastjetAll'),
@@ -426,17 +597,18 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
             'data/Summer16_23Sep2016V3_MC/Summer16_23Sep2016V3_MC_L2Relative_AK4PFchs.txt',
             'data/Summer16_23Sep2016V3_MC/Summer16_23Sep2016V3_MC_L3Absolute_AK4PFchs.txt',
         ),
-        #massCorrectorPuppi = cms.string('data/puppiCorrSummer16.root'),#updating
-        #reshapeBTag = cms.bool(True),
-        #btag = cms.string('pfCombinedInclusiveSecondaryVertexV2BJetTags'),
-        #btagDB = cms.string('data/CSVv2_Moriond17_B_H.csv'),
-        #jet1btag = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
-        #jet2btag = cms.int32(0),
-        met = cms.InputTag('pfMet'),# if isReMiniAod else cms.InputTag('slimmedMETs', '', ''),# 'LLP'
-        #metRecoil = cms.bool(False),
-        #metRecoilMC = cms.string('data/recoilfit_gjetsMC_Zu1_pf_v5.root'),
-        #metRecoilData = cms.string('data/recoilfit_gjetsData_Zu1_pf_v5.root'),
-        #metTriggerFileName = cms.string('data/MET_trigger_eff_data_SingleMuRunBH.root'),
+        massCorrectorPuppi = cms.string('data/puppiCorrSummer16.root'),#updating
+        reshapeBTag = cms.bool(True),
+        btag = cms.string('pfCombinedInclusiveSecondaryVertexV2BJetTags'),
+        btagDB = cms.string('data/CSVv2_Moriond17_B_H.csv'),
+        jet1btag = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
+        jet2btag = cms.int32(0),
+        met = cms.InputTag('slimmedMETs'),#('patMETs'),# if isReMiniAod else cms.InputTag('slimmedMETs', '', ''),# 'LLP'
+        recomet = cms.InputTag('pfMet'),
+        metRecoil = cms.bool(False),
+        metRecoilMC = cms.string('data/recoilfit_gjetsMC_Zu1_pf_v5.root'),
+        metRecoilData = cms.string('data/recoilfit_gjetsData_Zu1_pf_v5.root'),
+        metTriggerFileName = cms.string('data/MET_trigger_eff_data_SingleMuRunBH.root'),
         jerNameRes = cms.string('data/JER/Spring16_25nsV10_MC_PtResolution_AK4PFchs.txt'),#v10 is the latest
         jerNameSf = cms.string('data/JER/Spring16_25nsV10_MC_SF_AK4PFchs.txt'),#v10 is the latest
     ),
@@ -478,20 +650,20 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     ),
 
     vbfJetSet = cms.PSet(
-        jets = cms.InputTag('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(chosen_jets),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(3), # 0: no selection, 1: loose, 2: medium, 3: tight
-        #jet1pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
-        #jet2pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
+        ##jet1pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
+        ##jet2pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
         #new cut, motivated by calo-lifetimes trigger path
         #still to be optimized!
         jet1pt = cms.double(20.),
         jet2pt = cms.double(20.),
         jeteta = cms.double(5.2),
-        #addQGdiscriminator = cms.bool(False),
+        addQGdiscriminator = cms.bool(False),
         recalibrateJets = cms.bool(True),
         recalibrateMass = cms.bool(False),
-        #recalibratePuppiMass = cms.bool(False),
-        #softdropPuppiMassString = cms.string("ak8PFJetsPuppiValueMap:ak8PFJetsPuppiSoftDropMass" if pt_AK8<170 else "ak8PFJetsPuppiSoftDropMass"),
+        recalibratePuppiMass = cms.bool(False),
+        softdropPuppiMassString = cms.string("ak8PFJetsPuppiValueMap:ak8PFJetsPuppiSoftDropMass" if pt_AK8<170 else "ak8PFJetsPuppiSoftDropMass"),
         smearJets = cms.bool(False),#just for comparison!
         vertices = cms.InputTag('offlinePrimaryVertices'),
         rho = cms.InputTag('fixedGridRhoFastjetAll'),
@@ -517,19 +689,92 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
             'data/Summer16_23Sep2016V3_MC/Summer16_23Sep2016V3_MC_L2Relative_AK4PFchs.txt',
             'data/Summer16_23Sep2016V3_MC/Summer16_23Sep2016V3_MC_L3Absolute_AK4PFchs.txt',
         ),
-        #massCorrectorPuppi = cms.string('data/puppiCorrSummer16.root'),#updating
-        #reshapeBTag = cms.bool(True),
-        #btag = cms.string('pfCombinedInclusiveSecondaryVertexV2BJetTags'),
-        #btagDB = cms.string('data/CSVv2_Moriond17_B_H.csv'),
-        #jet1btag = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
-        #jet2btag = cms.int32(0),
-        met = cms.InputTag('pfMet'),# if isReMiniAod else cms.InputTag('slimmedMETs', '', ''),# 'LLP'
-        #metRecoil = cms.bool(False),
-        #metRecoilMC = cms.string('data/recoilfit_gjetsMC_Zu1_pf_v5.root'),
-        #metRecoilData = cms.string('data/recoilfit_gjetsData_Zu1_pf_v5.root'),
-        #metTriggerFileName = cms.string('data/MET_trigger_eff_data_SingleMuRunBH.root'),
+        massCorrectorPuppi = cms.string('data/puppiCorrSummer16.root'),#updating
+        reshapeBTag = cms.bool(True),
+        btag = cms.string('pfCombinedInclusiveSecondaryVertexV2BJetTags'),
+        btagDB = cms.string('data/CSVv2_Moriond17_B_H.csv'),
+        jet1btag = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
+        jet2btag = cms.int32(0),
+        met = cms.InputTag('patMETs'),#('patMETs'),#('pfMet'),# if isReMiniAod else cms.InputTag('slimmedMETs', '', ''),# 'LLP'
+        recomet = cms.InputTag('pfMet'),
+        metRecoil = cms.bool(False),
+        metRecoilMC = cms.string('data/recoilfit_gjetsMC_Zu1_pf_v5.root'),
+        metRecoilData = cms.string('data/recoilfit_gjetsData_Zu1_pf_v5.root'),
+        metTriggerFileName = cms.string('data/MET_trigger_eff_data_SingleMuRunBH.root'),
         jerNameRes = cms.string('data/JER/Spring16_25nsV10_MC_PtResolution_AK4PFchs.txt'),#v10 is the latest
         jerNameSf = cms.string('data/JER/Spring16_25nsV10_MC_SF_AK4PFchs.txt'),#v10 is the latest
+    ),
+    electronSet = cms.PSet(
+        electrons = cms.InputTag('gedGsfElectrons'),
+        vertices = cms.InputTag('offlineSlimmedPrimaryVertices'),
+        eleVetoIdMap = cms.InputTag('egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-veto'),
+        eleLooseIdMap = cms.InputTag('egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-loose'),
+        eleMediumIdMap = cms.InputTag('egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-medium'),
+        eleTightIdMap = cms.InputTag('egmGsfElectronIDs:cutBasedElectronID-Summer16-80X-V1-tight'),
+        eleHEEPIdMap = cms.InputTag('egmGsfElectronIDs:heepElectronID-HEEPV70'),
+        eleMVANonTrigMediumIdMap = cms.InputTag('egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp90'),
+        eleMVANonTrigTightIdMap = cms.InputTag('egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp80'),
+        eleMVATrigMediumIdMap = cms.InputTag('egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp90'), ### NOTE -> SAME AS NON-TRIG IN 2017
+        eleMVATrigTightIdMap = cms.InputTag('egmGsfElectronIDs:mvaEleID-Spring16-GeneralPurpose-V1-wp80'), ### NOTE -> SAME AS NON-TRIG IN 2017
+        eleEcalRecHitCollection = cms.InputTag("reducedEgamma:reducedEBRecHits"),
+        eleSingleTriggerIsoFileName = cms.string('data/SingleEleTriggerEff.root'),
+        eleSingleTriggerFileName = cms.string('data/eleTriggerEff_MORIOND17.root'),
+        eleVetoIdFileName = cms.string('data/eleVetoIDSF_MORIOND17.root'),
+        eleLooseIdFileName = cms.string('data/eleLooseIDSF_MORIOND17.root'),
+        eleMediumIdFileName = cms.string('data/eleMediumIDSF_MORIOND17.root'),
+        eleTightIdFileName = cms.string('data/eleTightIDSF_MORIOND17.root'),
+        eleMVATrigMediumIdFileName = cms.string('data/eleMVA90IDSF_MORIOND17.root'),
+        eleMVATrigTightIdFileName = cms.string('data/eleMVA80IDSF_MORIOND17.root'),
+        eleRecoEffFileName = cms.string('data/eleRecoSF_MORIOND17.root'),
+        eleScaleSmearCorrectionName = cms.string('EgammaAnalysis/ElectronTools/data/ScalesSmearings/Moriond17_23Jan_ele'),
+        electron1id = cms.int32(0), # 0: veto, 1: loose, 2: medium, 3: tight, 4: HEEP, 5: MVA medium nonTrig, 6: MVA tight nonTrig, 7: MVA medium Trig, 8: MVA tight Trig
+        electron2id = cms.int32(0),
+        electron1pt = cms.double(10),
+        electron2pt = cms.double(10),
+    ),
+    muonSet = cms.PSet(
+        muons = cms.InputTag('cleanedMuons'),#('slimmedMuons'),#
+        vertices = cms.InputTag('offlineSlimmedPrimaryVertices'),
+        muonTrkFileName = cms.string('data/MuonTrkEfficienciesAndSF_MORIOND17.root'),
+        muonIdFileName = cms.string('data/MuonIdEfficienciesAndSF_MORIOND17.root'),
+        muonIsoFileName = cms.string('data/MuonIsoEfficienciesAndSF_MORIOND17.root'),
+        muonTrkHighptFileName = cms.string('data/tkhighpt_2016full_absetapt.root'),
+        muonTriggerFileName = cms.string('data/MuonTrigEfficienciesAndSF_MORIOND17.root'),
+        doubleMuonTriggerFileName = cms.string('data/MuHLTEfficiencies_Run_2012ABCD_53X_DR03-2.root'),#FIXME -> obsolete
+        muon1id = cms.int32(1), # 0: tracker high pt muon id, 1: loose, 2: medium, 3: tight, 4: high pt
+        muon2id = cms.int32(1),
+        muon1iso = cms.int32(1), # 0: trk iso (<0.1), 1: loose (<0.25), 2: tight (<0.15) (pfIso in cone 0.4)
+        muon2iso = cms.int32(1),
+        muon1pt = cms.double(10.),
+        muon2pt = cms.double(10.),
+        useTuneP = cms.bool(False),
+        doRochester = cms.bool(False),
+    ),
+    tauSet = cms.PSet(
+        taus = cms.InputTag('slimmedTaus'),
+        vertices = cms.InputTag('offlineSlimmedPrimaryVertices'),
+        taupt = cms.double(18.),
+        taueta = cms.double(2.3),
+        tauIdByDecayMode = cms.int32(1),# 0: not set, 1: old, 2: new
+        tauIdByDeltaBetaIso = cms.int32(1),# 0: not set, 1: loose, 2: medium, 3: tight
+        tauIdByMVAIso = cms.int32(0),# 0: not set, 1: V loose, 2: loose, 3: medium, 4: tight, 5: V tight
+        tauIdByMuonRejection = cms.int32(0),# 0: not set, 1: loose, 2: tight
+        tauIdByElectronRejection = cms.int32(0),# 0: not set, 1: V loose, 2: loose, 3: medium, 4: tight
+    ),
+    photonSet = cms.PSet(
+        photons = cms.InputTag('gedPhotons'),
+        vertices = cms.InputTag('offlinePrimaryVertices'),
+        phoLooseIdMap = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-loose'),
+        phoMediumIdMap = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-medium'),
+        phoTightIdMap = cms.InputTag('egmPhotonIDs:cutBasedPhotonID-Spring16-V2p2-tight'),
+        phoMVANonTrigMediumIdMap = cms.InputTag('egmPhotonIDs:mvaPhoID-Spring16-nonTrig-V1-wp90'),
+        phoEcalRecHitCollection = cms.InputTag("reducedEgamma:reducedEBRecHits"),
+        phoLooseIdFileName = cms.string('data/phoLooseIDSF_MORIOND17.root'),
+        phoMediumIdFileName = cms.string('data/phoMediumIDSF_MORIOND17.root'),
+        phoTightIdFileName = cms.string('data/phoTightIDSF_MORIOND17.root'),
+        phoMVANonTrigMediumIdFileName = cms.string('data/phoMVA90IDSF_MORIOND17.root'),
+        photonid = cms.int32(1), # 1: loose, 2: medium, 3: tight, 4:MVA NonTrig medium
+        photonpt = cms.double(15.),
     ),
     minGenBpt = cms.double(15.),#gen b quarks in acceptance
     maxGenBeta = cms.double(2.4),#gen b quarks in acceptance
@@ -549,6 +794,21 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
 )
 
 process.seq = cms.Sequence(
+    #process.packedPFCandidates *
+    #process.packedCandsForTkIso *
+    #process.lostTracksForTkIso *
+    #process.lostTracks *
+    #process.reducedEgamma *
+    #process.heepIDVarValueMaps *
+    #process.egmPhotonIDs *
+    #process.egmGsfElectronIDs *
+    #process.patPhotons *
+    #process.patElectrons *
+    #process.selectedPatPhotons *
+    #process.selectedPatElectrons *
+    ##process.slimmedPhotons *
+    ##process.slimmedElectrons *
+    ####process.fullPatMetSequenceTEST *#leading to segfault
     process.counter *
     process.ntuple
 )
