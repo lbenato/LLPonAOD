@@ -26,15 +26,15 @@ class TriggerAnalyzer {
         TriggerAnalyzer(edm::ParameterSet&, edm::ConsumesCollector&&);
         ~TriggerAnalyzer();
         
-        virtual void FillTriggerMap(const edm::Event&, std::map<std::string, bool>&);
+        virtual void FillTriggerMap(const edm::Event&, std::map<std::string, bool>&, std::map<std::string, int>&, bool&);
         virtual void FillMetFiltersMap(const edm::Event&, std::map<std::string, bool>&);//, edm::EDGetTokenT<edm::TriggerResults>&, std::vector<std::string>&);
 	virtual bool GetBadPFMuonFlag(const edm::Event&);
 	virtual bool GetBadChCandFlag(const edm::Event&);
 	virtual bool EvaluatePrefiring(const edm::Event&);//Pre-Firing
-	//virtual std::vector<pat::TriggerObjectStandAlone> FillTriggerObjectVector(const edm::Event&, std::string&);//not in AOD
-	////virtual std::vector<pat::TriggerObjectStandAlone> FillTriggerObjectVector(const edm::Event&);
-        //virtual void FillL1FiltersMap(const edm::Event&, std::map<std::string, bool>&);//not in AOD
-        //virtual void Debug(const edm::Event&);
+	virtual std::vector<pat::TriggerObjectStandAlone> FillTriggerObjectVector(const edm::Event&, std::string&);
+	//virtual std::vector<pat::TriggerObjectStandAlone> FillTriggerObjectVector(const edm::Event&);
+        virtual void FillL1FiltersMap(const edm::Event&, std::map<std::string, bool>&);
+        virtual void Debug(const edm::Event&);
         virtual void L1Bits(const edm::Event&);
       
     private:
@@ -43,16 +43,16 @@ class TriggerAnalyzer {
         std::vector<std::string> TriggerList;
         edm::EDGetTokenT<edm::TriggerResults> MetFiltersToken;
         std::vector<std::string> MetFiltersList;
-	//edm::EDGetTokenT<pat::PackedTriggerPrescales> PrescalesToken;//not in AOD
-	//edm::EDGetTokenT<pat::PackedTriggerPrescales> L1MinPrescalesToken;//not in AOD
-	//edm::EDGetTokenT<pat::PackedTriggerPrescales> L1MaxPrescalesToken;//not in AOD
-	//edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> TriggerObjectToken;//not in AOD
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> PrescalesToken;
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> L1MinPrescalesToken;
+	edm::EDGetTokenT<pat::PackedTriggerPrescales> L1MaxPrescalesToken;
+	edm::EDGetTokenT<std::vector<pat::TriggerObjectStandAlone>> TriggerObjectToken;
 	edm::EDGetTokenT<bool> BadPFMuonFilterToken;
 	edm::EDGetTokenT<bool> BadChCandFilterToken;
 	bool PerformPreFiringStudies;
 	edm::EDGetTokenT<BXVector<GlobalAlgBlk>> L1GtToken;//Pre-Firing
-        //std::vector<std::string> L1FiltersList;//not in AOD
-	////l1t::L1TGlobalUtil *l1GtUtils_;
+        std::vector<std::string> L1FiltersList;
+	//l1t::L1TGlobalUtil *l1GtUtils_;
 };
 
 

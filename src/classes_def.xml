@@ -1,8 +1,10 @@
 <lcgdict>
-  <class name="JetType"/>
+  <class name="RecoJetType"/>
   <class name="CaloJetType"/>
   <class name="GenPType"/>
-  <class name="std::vector<JetType>"/>
+  <class name="JetType"/>
+  <class name="std::vector<RecoJetType>"/>
   <class name="std::vector<CaloJetType>"/>
   <class name="std::vector<GenPType>"/>
+  <class name="std::vector<JetType>"/>
 </lcgdict>
