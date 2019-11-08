@@ -10,11 +10,13 @@ namespace {
     CaloJetType dummy1;
     GenPType dummy2;
     JetType dummy3;
+    PFCandidateType dummy4;
 
     //Vector of structures                                                      
     std::vector<RecoJetType> dummyVector0;
     std::vector<CaloJetType> dummyVector1;
     std::vector<GenPType> dummyVector2;
     std::vector<JetType> dummyVector3;
+    std::vector<PFCandidateType> dummyVector4;
   };
 }

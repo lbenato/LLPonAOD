@@ -3,8 +3,10 @@
   <class name="CaloJetType"/>
   <class name="GenPType"/>
   <class name="JetType"/>
+  <class name="PFCandidateType"/>
   <class name="std::vector<RecoJetType>"/>
   <class name="std::vector<CaloJetType>"/>
   <class name="std::vector<GenPType>"/>
   <class name="std::vector<JetType>"/>
+  <class name="std::vector<PFCandidateType>"/>
 </lcgdict>
