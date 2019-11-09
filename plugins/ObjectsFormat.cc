@@ -1941,6 +1941,53 @@ void ObjectsFormat::ResetSimplifiedJetType(SimplifiedJetType& I) {
     I.TriggerMatched_VBFJet = 0;
     I.TriggerMatched_DisplacedJet = 0;
     I.TriggerMatched_TripleJet50 = 0;
+
+}
+std::string ObjectsFormat::ListSimplifiedJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:cHadE/F:nHadE/F:cHadEFrac/F:nHadEFrac/F:nEmE/F:nEmEFrac/F:cEmE/F:cEmEFrac/F:cmuE/F:cmuEFrac/F:muE/F:muEFrac/F:eleE/F:eleEFrac/F:eleMulti/F:photonE/F:photonEFrac/F:photonMulti/F:cHadMulti/F:nHadMulti/F:npr/F:cMulti/F:nMulti/F:isLoose/O:isMedium/O:isTight/O:isGenMatched/I:nSelectedTracks/I:nConstituents/I:TriggerMatched_VBFJet/I:TriggerMatched_DisplacedJet/I:TriggerMatched_TripleJet50/I";}
+
+//*****************************//
+////        DT4DSegments         //
+////*****************************//
+
+
+void ObjectsFormat::FillDT4DSegmentType(DT4DSegmentType& I, const DTRecSegment4D* R, const GlobalPoint* P) {
+    if(!R) return;
+    I.eta         = P->eta();
+    I.phi         = P->phi();
+    I.sector      = R->chamberId().sector();
+    I.station      = R->chamberId().station();
+    I.wheel      = R->chamberId().wheel();
+
+
 }
 
-std::string ObjectsFormat::ListSimplifiedJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:cHadE/F:nHadE/F:cHadEFrac/F:nHadEFrac/F:nEmE/F:nEmEFrac/F:cEmE/F:cEmEFrac/F:cmuE/F:cmuEFrac/F:muE/F:muEFrac/F:eleE/F:eleEFrac/F:eleMulti/F:photonE/F:photonEFrac/F:photonMulti/F:cHadMulti/F:nHadMulti/F:npr/F:cMulti/F:nMulti/F:isLoose/O:isMedium/O:isTight/O:isGenMatched/I:nSelectedTracks/I:nConstituents/I:TriggerMatched_VBFJet/I:TriggerMatched_DisplacedJet/I:TriggerMatched_TripleJet50/I";}
+void ObjectsFormat::ResetDT4DSegmentType(DT4DSegmentType& I) {
+    I.eta         = -9.;
+    I.phi         = -9.;
+    I.sector      = -9;
+    I.station      = -9;
+    I.wheel      = -9;
+
+}
+
+std::string ObjectsFormat::ListDT4DSegmentType() {return "eta/F:phi/F:sector/I:station/I:wheel/I";}
+
+
+
+void ObjectsFormat::FillCSCSegmentType(CSCSegmentType& I, const CSCSegment* R, const GlobalPoint* P) {
+    if(!R) return;
+    I.eta         = P->eta();
+    I.phi         = P->phi();
+    I.time        = R->time();
+
+}
+
+void ObjectsFormat::ResetCSCSegmentType(CSCSegmentType& I) {
+    I.eta         = -9.;
+    I.phi         = -9.;
+    I.time        = -9.;
+
+}
+
+std::string ObjectsFormat::ListCSCSegmentType() {return "eta/F:phi/F:time/F";}
+

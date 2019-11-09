@@ -42,9 +42,12 @@ class ObjectsFormat {
         static void FillTriggerObjectType(TriggerObjectType&, const pat::TriggerObjectStandAlone*);
         static void FillPFCandidateType(PFCandidateType&, const pat::PackedCandidate*, int, int, int);
         static void FillPrimVertexType(VertexType&, const reco::Vertex*);
-	static void FillSecVertexType(VertexType&, const reco::VertexCompositePtrCandidate*);
-	static void FillBtagSecVertexType(VertexType&, const reco::CandSecondaryVertexTagInfo*, const reco::CandIPTagInfo*, unsigned int, float, int);
+        static void FillSecVertexType(VertexType&, const reco::VertexCompositePtrCandidate*);
+        static void FillBtagSecVertexType(VertexType&, const reco::CandSecondaryVertexTagInfo*, const reco::CandIPTagInfo*, unsigned int, float, int);
         static void FillSimplifiedJetType(SimplifiedJetType&, const pat::Jet*, bool);
+        static void FillDT4DSegmentType(DT4DSegmentType&, const DTRecSegment4D* R, const GlobalPoint* P);
+        static void FillCSCSegmentType(CSCSegmentType&, const CSCSegment* R, const GlobalPoint* P);
+
 
         static void ResetLeptonType(LeptonType&);
         static void ResetPhotonType(PhotonType&);
@@ -61,8 +64,10 @@ class ObjectsFormat {
         static void ResetGenPType(GenPType&);
         static void ResetTriggerObjectType(TriggerObjectType&);
         static void ResetPFCandidateType(PFCandidateType&);
-	static void ResetVertexType(VertexType&);
+        static void ResetVertexType(VertexType&);
         static void ResetSimplifiedJetType(SimplifiedJetType&);
+        static void ResetDT4DSegmentType(DT4DSegmentType&);
+        static void ResetCSCSegmentType(CSCSegmentType&);
 
         static std::string ListLeptonType();
         static std::string ListPhotonType();
@@ -81,7 +86,8 @@ class ObjectsFormat {
         static std::string ListPFCandidateType();
         static std::string ListVertexType();
         static std::string ListSimplifiedJetType();
-
+        static std::string ListDT4DSegmentType();
+        static std::string ListCSCSegmentType();
 
     private:
 

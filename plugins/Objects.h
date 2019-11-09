@@ -930,6 +930,27 @@ SimplifiedJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.), energy(-1.),cHadE(-
     int TriggerMatched_TripleJet50;
 
 };
+struct DT4DSegmentType {
+DT4DSegmentType(): eta(-9.), phi(-9.), wheel(-9), sector(-9), station(-9){}
+
+    float eta;
+    float phi;
+    int wheel;
+    int sector;
+    int station;
+
+};
+
+struct CSCSegmentType {
+CSCSegmentType(): eta(-9.), phi(-9.), time(-9.){}
+
+    float eta;
+    float phi;
+    float time;
+
+};
+
+
 
 
 #endif

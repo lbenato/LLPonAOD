@@ -77,6 +77,8 @@
 #include "RecoObjectsFormat.h"
 #include "Objects.h"
 #include "ObjectsFormat.h"
+#include "DTAnalyzer.h"
+#include "CSCAnalyzer.h"
 
 //
 // class declaration
@@ -130,6 +132,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     RecoPhotonAnalyzer* theRecoPhotonAnalyzer;
     VertexAnalyzer* theVertexAnalyzer;
     PFCandidateAnalyzer* thePFCandidateAnalyzer;
+    DTAnalyzer* theDTAnalyzer;
+    CSCAnalyzer* theCSCAnalyzer;
 
     double MinGenBpt, MaxGenBeta;
     double InvmassVBF, DetaVBF;//VBF tagging
@@ -147,6 +151,9 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::vector<GenPType> GenBquarks;
     std::vector<GenPType> GenLLPs;
     GenPType GenHiggs;
+    std::vector<DT4DSegmentType> DTRecSegments4D;    
+    std::vector<CSCSegmentType> CSCSegments;
+
 
     std::vector<PFCandidateType> PFCandidates;
 
@@ -255,6 +262,9 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    theRecoPhotonAnalyzer   = new RecoPhotonAnalyzer(PhotonPSet, consumesCollector());
    theVertexAnalyzer       = new VertexAnalyzer(VertexPSet, consumesCollector());
    thePFCandidateAnalyzer  = new PFCandidateAnalyzer(PFCandidatePSet, consumesCollector());
+   theDTAnalyzer           = new DTAnalyzer(GenPSet, consumesCollector());
+   theCSCAnalyzer          = new CSCAnalyzer(GenPSet, consumesCollector());
+
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
@@ -295,7 +305,8 @@ AODNtuplizer::~AODNtuplizer()
    delete theRecoPhotonAnalyzer;
    delete theVertexAnalyzer;
    delete thePFCandidateAnalyzer;
-
+   delete theDTAnalyzer;
+   delete theCSCAnalyzer;
 }
 
 
@@ -1042,6 +1053,28 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
+   // DT segments
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   
+
+   std::vector<DTRecSegment4D> DTSegmentvector = theDTAnalyzer->FillDTSegment4DVector(iEvent);
+   std::vector<GlobalPoint> DTSegment_Global_points = theDTAnalyzer->FillGlobalPointDT4DSegmentVector(iEvent, iSetup,DTSegmentvector);
+   for(unsigned int i =0; i< DTSegmentvector.size();i++) DTRecSegments4D.push_back( DT4DSegmentType() );
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // CSC segments
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   
+
+   std::vector<CSCSegment> CSCSegmentvector = theCSCAnalyzer->FillCSCSegmentVector(iEvent);
+   std::vector<GlobalPoint> CSCSegment_Global_points = theCSCAnalyzer->FillGlobalPointCSCSegmentVector(iEvent, iSetup,CSCSegmentvector);
+   for(unsigned int i =0; i< CSCSegmentvector.size();i++) CSCSegments.push_back( CSCSegmentType() );
+
+  //-----------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
    // Fill objects
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -1060,7 +1093,13 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    }
    for(unsigned int i = 0; i < CaloJetsVect.size(); i++) CaloJets.push_back( CaloJetType() );
    for(unsigned int i = 0; i < CaloJetsVect.size(); i++){ ObjectsFormat::FillCaloJetType(CaloJets[i], &CaloJetsVect[i], isMC, caloGenMatched[i]);}
-   
+   //DTSegments
+   for(unsigned int i =0; i< DTSegmentvector.size();i++) ObjectsFormat::FillDT4DSegmentType(DTRecSegments4D[i], &DTSegmentvector[i],&DTSegment_Global_points[i]);
+
+   //CSCSegments
+   for(unsigned int i =0; i< CSCSegmentvector.size();i++) ObjectsFormat::FillCSCSegmentType(CSCSegments[i], &CSCSegmentvector[i],&CSCSegment_Global_points[i]);
+      
+ 
 
    //Fill tree
    tree -> Fill();
@@ -1068,7 +1107,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    CHSJets.clear();
    CaloJets.clear();
 
-
+   DTRecSegments4D.clear();
+   CSCSegments.clear();
 #ifdef THIS_IS_AN_EVENT_EXAMPLE
    Handle<ExampleData> pIn;
    iEvent.getByLabel("example",pIn);
@@ -1137,11 +1177,15 @@ AODNtuplizer::beginJob()
    tree -> Branch("GenHiggs", &GenHiggs.pt, ObjectsFormat::ListGenPType().c_str());
    tree -> Branch("GenLLPs", &GenLLPs);
    tree -> Branch("GenBquarks", &GenBquarks);
+   tree -> Branch("DTSegments", &DTRecSegments4D);
+   tree -> Branch("CSCSegments", &CSCSegments);
    //tree -> Branch("RecoMEt", &RecoMEt.pt, RecoObjectsFormat::ListRecoMEtType().c_str());
    tree -> Branch("MEt", &MEt.pt, ObjectsFormat::ListMEtType().c_str());
    tree -> Branch("CHSJets", &CHSJets);
    tree -> Branch("CaloJets", &CaloJets);
    tree -> Branch("VBFPair", &VBF.pt, ObjectsFormat::ListCandidateType().c_str());//wait!
+
+
 }
 
 // ------------ method called once each job just after ending the event loop  ------------

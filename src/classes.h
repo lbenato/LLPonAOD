@@ -11,6 +11,10 @@ namespace {
     GenPType dummy2;
     JetType dummy3;
     PFCandidateType dummy4;
+    DT4DSegmentType dummy5;
+    CSCSegmentType dummy6;
+
+
 
     //Vector of structures                                                      
     std::vector<RecoJetType> dummyVector0;
@@ -18,5 +22,7 @@ namespace {
     std::vector<GenPType> dummyVector2;
     std::vector<JetType> dummyVector3;
     std::vector<PFCandidateType> dummyVector4;
+    std::vector<DT4DSegmentType> dummyVector5;
+    std::vector<CSCSegmentType> dummyVector6;
   };
 }
