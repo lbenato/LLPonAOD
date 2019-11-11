@@ -182,6 +182,15 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int nMatchedCaloJets;
     long int number_of_b_matched_to_CHSJets;
     long int number_of_b_matched_to_CaloJets;
+    long int number_of_b_matched_to_DTSegment4D;
+    long int number_of_b_matched_to_CSCSegment;
+    long int number_of_VBF_matched_to_DTSegment4D;
+    long int number_of_VBF_matched_to_CSCSegment;
+    long int nMatchedDTsegmentstob;
+    long int nMatchedCSCsegmentstob;
+    long int nMatchedDTsegmentstoVBF;
+    long int nMatchedCSCsegmentstoVBF;
+    
     AddFourMomenta addP4;
     float HT;
     float MinJetMetDPhi;
@@ -349,6 +358,10 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    nMatchedCaloJets = 0;
    number_of_b_matched_to_CHSJets = 0;
    number_of_b_matched_to_CaloJets = 0;
+   number_of_b_matched_to_DTSegment4D=0;
+   number_of_b_matched_to_CSCSegment=0;
+   number_of_VBF_matched_to_DTSegment4D=0;
+   number_of_VBF_matched_to_CSCSegment=0;
    MinJetMetDPhi = MinJetMetDPhiAllJets = 10.;
    nGenBquarks = nGenLL = 0;
    m_pi = 0.;
@@ -424,7 +437,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 	    //TightElecVect.push_back(ElecVect.at(a));
 	    //nTightElectrons++;
 	  //}
-     //}
+     //}    long int nMatchedDTsegmentstoVBF;
    nElectrons = ElecVect.size();
 
    //------------------------------------------------------------------------------------------
@@ -1072,6 +1085,98 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    std::vector<GlobalPoint> DTSegment_Global_points = theDTAnalyzer->FillGlobalPointDT4DSegmentVector(iEvent, iSetup,DTSegmentvector);
    for(unsigned int i =0; i< DTSegmentvector.size();i++) DTRecSegments4D.push_back( DT4DSegmentType() );
 
+   
+      // Match DT Segments to Gen b quarks
+   
+      // for gen matching, to be filled later
+    std::vector<bool> DTGenMatched;
+    for(unsigned int i = 0; i < DTSegmentvector.size(); i++) DTGenMatched.push_back(false);//to be implemented later
+
+    std::vector<DTRecSegment4D> MatchedDTSegment4DVect;
+    //Matching the b quarks to AK4 calo jets
+    //Starting point: b-quark
+    int matching_index_DTSegment4D;//local variable
+    float delta_R_DTSegment4D;//local variable
+    float current_delta_R_DTSegment4D;//local variable
+    for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+        {
+        delta_R_DTSegment4D = 1000.;
+        current_delta_R_DTSegment4D = 1000.;
+        matching_index_DTSegment4D = -1;
+        for(unsigned int a = 0; a<DTSegmentvector.size(); a++)
+            {
+            current_delta_R_DTSegment4D = fabs(reco::deltaR(DTSegment_Global_points[a].eta(),DTSegment_Global_points[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+            if(current_delta_R_DTSegment4D<0.4 && current_delta_R_DTSegment4D<delta_R_DTSegment4D)
+                //this implements all the reasonable possibilities!
+                {
+                delta_R_DTSegment4D = min(delta_R_DTSegment4D,current_delta_R_DTSegment4D);
+                matching_index_DTSegment4D = a;
+                DTGenMatched[a] = true;
+                //JetsVect[a].addUserInt("original_jet_index",a+1);
+                MatchedDTSegment4DVect.push_back(DTSegmentvector[a]);//avoid duplicates!
+                }
+            }
+        if(matching_index_DTSegment4D>=0){
+            number_of_b_matched_to_DTSegment4D++;
+        }
+        }
+    //Remove duplicates from Matched Jets Vector
+    for(unsigned int r = 0; r<MatchedDTSegment4DVect.size(); r++)
+        {
+        for(unsigned int s = 0; s<MatchedDTSegment4DVect.size(); s++)
+            {
+            if(r!=s && MatchedDTSegment4DVect[s].localPosition()==MatchedDTSegment4DVect[r].localPosition()) MatchedDTSegment4DVect.erase(MatchedDTSegment4DVect.begin()+s);
+            }//duplicates removed
+        }
+    nMatchedDTsegmentstob = MatchedDTSegment4DVect.size();
+
+   // Match DT Segments to VBF jets
+    
+    
+          // for gen matching, to be filled later
+    std::vector<bool> DTVBFMatched;
+    for(unsigned int i = 0; i < DTSegmentvector.size(); i++) DTVBFMatched.push_back(false);//to be implemented later
+
+    std::vector<DTRecSegment4D> MatchedDTSegment4DtoVBFVect;
+    //Matching the b quarks to AK4 calo jets
+    //Starting point: b-quark
+    int matching_index_DTSegment4D_VBF;//local variable
+    float delta_R_DTSegment4D_VBF;//local variable
+    float current_delta_R_DTSegment4D_VBF;//local variable
+    for(unsigned int j = 0; j<VBFPairJetsVect.size(); j++)
+        {
+        delta_R_DTSegment4D_VBF = 1000.;
+        current_delta_R_DTSegment4D_VBF = 1000.;
+        matching_index_DTSegment4D_VBF = -1;
+        for(unsigned int a = 0; a<DTSegmentvector.size(); a++)
+            {
+            current_delta_R_DTSegment4D = fabs(reco::deltaR(DTSegment_Global_points[a].eta(),DTSegment_Global_points[a].phi(),VBFPairJetsVect[j].eta(),VBFPairJetsVect[j].phi()));
+            if(current_delta_R_DTSegment4D_VBF<0.4 && current_delta_R_DTSegment4D_VBF<delta_R_DTSegment4D_VBF)
+                //this implements all the reasonable possibilities!
+                {
+                delta_R_DTSegment4D_VBF = min(delta_R_DTSegment4D_VBF,current_delta_R_DTSegment4D_VBF);
+                matching_index_DTSegment4D_VBF = a;
+                DTVBFMatched[a] = true;
+                //JetsVect[a].addUserInt("original_jet_index",a+1);
+                MatchedDTSegment4DtoVBFVect.push_back(DTSegmentvector[a]);//avoid duplicates!
+                }
+            }
+        if(matching_index_DTSegment4D_VBF>=0){
+            number_of_VBF_matched_to_DTSegment4D++;
+        }
+        }
+    //Remove duplicates from Matched Jets Vector
+    for(unsigned int r = 0; r<MatchedDTSegment4DtoVBFVect.size(); r++)
+        {
+        for(unsigned int s = 0; s<MatchedDTSegment4DtoVBFVect.size(); s++)
+            {
+            if(r!=s && MatchedDTSegment4DtoVBFVect[s].localPosition()==MatchedDTSegment4DtoVBFVect[r].localPosition()) MatchedDTSegment4DtoVBFVect.erase(MatchedDTSegment4DtoVBFVect.begin()+s);
+            }//duplicates removed
+        }
+    nMatchedDTsegmentstoVBF = MatchedDTSegment4DtoVBFVect.size();
+    
+    
+   
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
    // CSC segments
@@ -1082,6 +1187,97 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    std::vector<CSCSegment> CSCSegmentvector = theCSCAnalyzer->FillCSCSegmentVector(iEvent);
    std::vector<GlobalPoint> CSCSegment_Global_points = theCSCAnalyzer->FillGlobalPointCSCSegmentVector(iEvent, iSetup,CSCSegmentvector);
    for(unsigned int i =0; i< CSCSegmentvector.size();i++) CSCSegments.push_back( CSCSegmentType() );
+   
+    // Match DT Segments to Gen b quarks
+
+    // for gen matching, to be filled later
+    std::vector<bool> CSCGenMatched;
+    for(unsigned int i = 0; i < CSCSegmentvector.size(); i++) CSCGenMatched.push_back(false);//to be implemented later
+
+    std::vector<CSCSegment> MatchedCSCSegmentVect;
+    //Matching the b quarks to AK4 calo jets
+    //Starting point: b-quark
+    int matching_index_CSCSegment;//local variable
+    float delta_R_CSCSegment;//local variable
+    float current_delta_R_CSCSegment;//local variable
+    for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+        {
+        delta_R_CSCSegment = 1000.;
+        current_delta_R_CSCSegment = 1000.;
+        matching_index_CSCSegment = -1;
+        for(unsigned int a = 0; a<CSCSegmentvector.size(); a++)
+            {
+            current_delta_R_CSCSegment = fabs(reco::deltaR(CSCSegment_Global_points[a].eta(),CSCSegment_Global_points[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+            if(current_delta_R_CSCSegment<0.4 && current_delta_R_CSCSegment<delta_R_CSCSegment)
+                //this implements all the reasonable possibilities!
+                {
+                delta_R_CSCSegment = min(delta_R_CSCSegment,current_delta_R_CSCSegment);
+                matching_index_CSCSegment = a;
+                CSCGenMatched[a] = true;
+                //JetsVect[a].addUserInt("original_jet_index",a+1);
+                MatchedCSCSegmentVect.push_back(CSCSegmentvector[a]);//avoid duplicates!
+                }
+            }
+        if(matching_index_CSCSegment>=0){
+            number_of_b_matched_to_CSCSegment++;
+        }
+        }
+    //Remove duplicates from Matched Jets Vector
+    for(unsigned int r = 0; r<MatchedCSCSegmentVect.size(); r++)
+        {
+        for(unsigned int s = 0; s<MatchedCSCSegmentVect.size(); s++)
+            {
+            if(r!=s && MatchedCSCSegmentVect[s].localPosition()==MatchedCSCSegmentVect[r].localPosition()) MatchedCSCSegmentVect.erase(MatchedCSCSegmentVect.begin()+s);
+            }//duplicates removed
+        }
+    nMatchedCSCsegmentstob = MatchedCSCSegmentVect.size();
+   
+    
+    // Match CSC Segments to VBF jets
+    
+    
+    // for gen matching, to be filled later
+    std::vector<bool> CSCVBFMatched;
+    for(unsigned int i = 0; i < CSCSegmentvector.size(); i++) CSCVBFMatched.push_back(false);//to be implemented later
+
+    std::vector<CSCSegment> MatchedCSCSegmenttoVBFVect;
+    //Matching the b quarks to AK4 calo jets
+    //Starting point: b-quark
+    int matching_index_CSCSegment_VBF;//local variable
+    float delta_R_CSCSegment_VBF;//local variable
+    float current_delta_R_CSCSegment_VBF;//local variable
+    for(unsigned int j = 0; j<VBFPairJetsVect.size(); j++)
+        {
+        delta_R_CSCSegment_VBF = 1000.;
+        current_delta_R_CSCSegment_VBF = 1000.;
+        matching_index_CSCSegment_VBF = -1;
+        for(unsigned int a = 0; a<CSCSegmentvector.size(); a++)
+            {
+            current_delta_R_CSCSegment = fabs(reco::deltaR(CSCSegment_Global_points[a].eta(),CSCSegment_Global_points[a].phi(),VBFPairJetsVect[j].eta(),VBFPairJetsVect[j].phi()));
+            if(current_delta_R_CSCSegment_VBF<0.4 && current_delta_R_CSCSegment_VBF<delta_R_CSCSegment_VBF)
+                //this implements all the reasonable possibilities!
+                {
+                delta_R_CSCSegment_VBF = min(delta_R_CSCSegment_VBF,current_delta_R_CSCSegment_VBF);
+                matching_index_CSCSegment_VBF = a;
+                CSCVBFMatched[a] = true;
+                //JetsVect[a].addUserInt("original_jet_index",a+1);
+                MatchedCSCSegmenttoVBFVect.push_back(CSCSegmentvector[a]);//avoid duplicates!
+                }
+            }
+        if(matching_index_CSCSegment_VBF>=0){
+            number_of_VBF_matched_to_CSCSegment++;
+        }
+        }
+    //Remove duplicates from Matched Jets Vector
+    for(unsigned int r = 0; r<MatchedCSCSegmenttoVBFVect.size(); r++)
+        {
+        for(unsigned int s = 0; s<MatchedCSCSegmenttoVBFVect.size(); s++)
+            {
+            if(r!=s && MatchedCSCSegmenttoVBFVect[s].localPosition()==MatchedCSCSegmenttoVBFVect[r].localPosition()) MatchedCSCSegmenttoVBFVect.erase(MatchedCSCSegmenttoVBFVect.begin()+s);
+            }//duplicates removed
+        }
+    nMatchedCSCsegmentstoVBF = MatchedCSCSegmenttoVBFVect.size();
+
 
    //-----------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -1163,9 +1359,6 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
 
-
- 
-
    //Fill tree
    tree -> Fill();
    if(isVerbose) std::cout << "TREE FILLED!!!!!!!!!!!! Go to next event...--->" << std::endl;
@@ -1231,8 +1424,18 @@ AODNtuplizer::beginJob()
    tree -> Branch("nCaloJets" , &nCaloJets , "nCaloJets/L");
    tree -> Branch("nMatchedCHSJets" , &nMatchedCHSJets , "nMatchedCHSJets/L");
    tree -> Branch("nMatchedCaloJets" , &nMatchedCaloJets , "nMatchedCaloJets/L");
+   tree -> Branch("nMatchedDTsegmentstob", &nMatchedDTsegmentstob, "nMatchedDTsegmentstob/L");
+   tree -> Branch("nMatchedCSCsegmentstob", &nMatchedCSCsegmentstob, "nMatchedCSCsegmentstob/L");
+   tree -> Branch("nMatchedDTsegmentstoVBF", &nMatchedDTsegmentstoVBF, "nMatchedDTsegmentstoVBF/L");
+   tree -> Branch("nMatchedCSCsegmentstoVBF", &nMatchedCSCsegmentstoVBF, "nMatchedCSCsegmentstoVBF/L");
    tree -> Branch("number_of_b_matched_to_CHSJets", &number_of_b_matched_to_CHSJets, "number_of_b_matched_to_CHSJets/L");
    tree -> Branch("number_of_b_matched_to_CaloJets", &number_of_b_matched_to_CaloJets, "number_of_b_matched_to_CaloJets/L");
+   tree -> Branch("number_of_b_matched_to_DTSegment4D", &number_of_b_matched_to_DTSegment4D, "number_of_b_matched_to_DTSegment4D/L");
+   tree -> Branch("number_of_b_matched_to_CSCSegment", &number_of_b_matched_to_CSCSegment, "number_of_b_matched_to_CSCSegment/L");
+   tree -> Branch("number_of_VBF_matched_to_CSCSegment", &number_of_VBF_matched_to_CSCSegment, "number_of_VBF_matched_to_CSCSegment/L");
+   tree -> Branch("number_of_VBF_matched_to_DTSegment4D", &number_of_VBF_matched_to_DTSegment4D, "number_of_VBF_matched_to_DTSegment4D/L");
+
+   
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    // Set trigger branches
