@@ -24,7 +24,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(10) )
 process.source = cms.Source("PoolSource",
     # replace 'myfile.root' with the source file you want to use
     fileNames = cms.untracked.vstring(
-        'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110750/0000/aodsim_1.root'
+        'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110750/0000/aodsim_1.root',
+        #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110243/0000/aodsim_1.root'
     )
 )
 
@@ -784,8 +785,8 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         pfCandidates = cms.InputTag('packedPFCandidates'),
         lostTracks = cms.InputTag('lostTracks'),
     ),
-    minGenBpt = cms.double(15.),#gen b quarks in acceptance
-    maxGenBeta = cms.double(2.4),#gen b quarks in acceptance
+    minGenBpt = cms.double(0.),#(15.),#gen b quarks in acceptance
+    maxGenBeta = cms.double(999.),#(2.4),#gen b quarks in acceptance
     #invmassVBF = cms.double(400.?),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
     #new cut, motivated by calo-lifetimes trigger path
     invmassVBF = cms.double(250.),
@@ -804,6 +805,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeAllJetPFCandidates = cms.bool(True), #Matched to either AK4 or AK8
     writeAllPFCandidates = cms.bool(False), #All PFCandidates. Large collection: Please write only if needed!
     performPreFiringStudies = cms.bool(True if ('unprefirable' in process.source.fileNames[0]) else False),
+    verbose = cms.bool(True),
 )
 
 process.seq = cms.Sequence(

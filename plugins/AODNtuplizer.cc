@@ -19,6 +19,9 @@
 
 // system include files
 #include <memory>
+#include <iostream>//compute time
+#include <chrono>//compute time
+#include <ctime>//compute time
 
 // user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
@@ -164,7 +167,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::map<std::string, bool> TriggerMap;
     //std::map<std::string, bool> MetFiltersMap;
 
-
+    bool isVerbose;
     bool isMC;
     bool isVBF;
     long int EventNumber, LumiNumber, RunNumber, nPV, nSV;
@@ -237,7 +240,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    WriteAK8JetPFCandidates(iConfig.getParameter<bool>("writeAK8JetPFCandidates")),
    WriteAllJetPFCandidates(iConfig.getParameter<bool>("writeAllJetPFCandidates")),
    WriteAllPFCandidates(iConfig.getParameter<bool>("writeAllPFCandidates")),
-   PerformPreFiringStudies(iConfig.getParameter<bool>("performPreFiringStudies"))
+   PerformPreFiringStudies(iConfig.getParameter<bool>("performPreFiringStudies")),
+   isVerbose(iConfig.getParameter<bool> ("verbose"))
 
 {
 
@@ -281,7 +285,10 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    ////edm::InputTag IT_met = edm::InputTag("slimmedMETs");
    ////metToken = consumes<std::vector<pat::MET>>(IT_met);
    //now do what ever initialization is needed
+
    usesResource("TFileService");
+
+   if(isVerbose) std::cout << "---------- STARTING ----------" << std::endl;
 
 
 }
@@ -292,6 +299,7 @@ AODNtuplizer::~AODNtuplizer()
  
    // do anything here that needs to be done at desctruction time
    // (e.g. close files, deallocate resources etc.)
+   if(isVerbose) std::cout << "---------- ENDING  ----------" << std::endl;
 
    delete theCHSJetAnalyzer;
    delete theCaloJetAnalyzer;
@@ -318,6 +326,8 @@ AODNtuplizer::~AODNtuplizer()
 void
 AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
+
+   auto start = std::chrono::system_clock::now();//time!
    using namespace edm;
    using namespace reco;
    using namespace std;
@@ -403,7 +413,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    // Electrons
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
-   ////if(isVerbose) std::cout << "Electrons" << std::endl;
+   //if(isVerbose) std::cout << "Electrons" << std::endl;
    std::vector<reco::GsfElectron> ElecVect = theRecoElectronAnalyzer->FillElectronVector(iEvent);
    //std::vector<reco::GsfElectron> TightElecVect;
 
@@ -440,7 +450,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    // Taus
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
-   ////if(isVerbose) std::cout << "Taus" << std::endl;
+   //if(isVerbose) std::cout << "Taus" << std::endl;
    std::vector<pat::Tau> TauVect = theTauAnalyzer->FillTauVector(iEvent);
    theTauAnalyzer->CleanTausFromMuons(TauVect, MuonVect, 0.4);
    theTauAnalyzer->CleanTausFromRecoElectrons(TauVect, ElecVect, 0.4);
@@ -1073,11 +1083,24 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    std::vector<GlobalPoint> CSCSegment_Global_points = theCSCAnalyzer->FillGlobalPointCSCSegmentVector(iEvent, iSetup,CSCSegmentvector);
    for(unsigned int i =0; i< CSCSegmentvector.size();i++) CSCSegments.push_back( CSCSegmentType() );
 
-  //-----------------------------------------------------------------------------------------
+   //-----------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
    // Fill objects
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
+   auto end = std::chrono::system_clock::now();//time!
+   std::chrono::duration<double> elapsed_seconds = end-start;
+   std::time_t end_time = std::chrono::system_clock::to_time_t(end);
+
+   if(isVerbose)
+      {
+	std::cout << "**************************************************" << std::endl;
+	std::cout << "finished Analyze method computations at " << std::ctime(&end_time)
+		  << "elapsed time: " << elapsed_seconds.count() << "s\n";
+	std::cout << "**************************************************" << std::endl;
+      }
+
+   if(isVerbose) std::cout << " - Filling objects" << std::endl;
 
    if (WriteGenVBFquarks) for(unsigned int i = 0; i < GenVBFVect.size(); i++) ObjectsFormat::FillGenPType(GenVBFquarks[i], &GenVBFVect[i]);
    if (WriteGenHiggs) for(unsigned int i = 0; i < GenHiggsVect.size(); i++) ObjectsFormat::FillGenPType(GenHiggs, &GenHiggsVect[i]);
@@ -1099,10 +1122,54 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //CSCSegments
    for(unsigned int i =0; i< CSCSegmentvector.size();i++) ObjectsFormat::FillCSCSegmentType(CSCSegments[i], &CSCSegmentvector[i],&CSCSegment_Global_points[i]);
       
+
+
+   if(isVerbose) {
+      //Write a summary, in verbose mode
+      std::cout << " --- Event n. " << iEvent.id().event() << ", lumi " << iEvent.luminosityBlock() << ", run " << iEvent.id().run() << std::endl;
+
+      std::cout << "number of CHS AK4 jets:  " << CHSJetsVect.size() << std::endl;
+      for(unsigned int i = 0; i < CHSJetsVect.size(); i++) std::cout << "  CHS AK4 jet  [" << i << "]\tpt: " << CHSJetsVect[i].pt() << "\teta: " << CHSJetsVect[i].eta() << "\tphi: " << CHSJetsVect[i].phi() << "\tmass: " << CHSJetsVect[i].mass() << std::endl;
+
+      std::cout << "VBF jets pair:  " << VBFPairJetsVect.size() << std::endl;
+      if(isVBF) std::cout << "VBF conditions satisfied" << std::endl;
+      for(unsigned int i = 0; i < VBFPairJetsVect.size(); i++) std::cout << "  VBF jet  [" << i << "]\tpt: " << VBFPairJetsVect[i].pt() << "\teta: " << VBFPairJetsVect[i].eta() << "\tphi: " << VBFPairJetsVect[i].phi() << "\tmass: " << VBFPairJetsVect[i].mass() << std::endl;
+
+      std::cout << "number of Gen B quarks:  " << GenBquarksVect.size() << std::endl;
+      for(unsigned int i = 0; i < GenBquarksVect.size(); i++) {std::cout << "  Gen B quark  [" << i << "]\tpt: " << GenBquarksVect[i].pt() << "\teta: " << GenBquarksVect[i].eta() << "\tphi: " << GenBquarksVect[i].phi() << "\tradius (in cm): " << ( GenBquarksVect[i].mother() ? sqrt(pow(GenBquarksVect[i].vx() - GenBquarksVect[i].mother()->vx(),2) + pow(GenBquarksVect[i].vy() - GenBquarksVect[i].mother()->vy(),2) + pow(GenBquarksVect[i].vz() - GenBquarksVect[i].mother()->vz(),2)) : -1000. ) << std::endl;}
+
+      std::cout << "Missing ET:  " << std::endl;
+      std::cout << "  pt: " << MET.pt() << "\tphi: " << MET.phi() << std::endl;
+
+      std::cout << "number of CHS AK4 jets matched to b quarks:  " << MatchedCHSJetsVect.size() << std::endl;
+      for(unsigned int i = 0; i < MatchedCHSJetsVect.size(); i++) std::cout << "  Matched CHS AK4 jet  [" << i << "]\tpt: " << MatchedCHSJetsVect[i].pt() << "\teta: " << MatchedCHSJetsVect[i].eta() << "\tphi: " << MatchedCHSJetsVect[i].phi() << "\tmass: " << MatchedCHSJetsVect[i].mass() << std::endl;
+
+      std::cout << "number of Calo AK4 jets:  " << CaloJetsVect.size() << std::endl;
+      for(unsigned int i = 0; i < CaloJetsVect.size(); i++) std::cout << "  Calo AK4 jet  [" << i << "]\tpt: " << CaloJetsVect[i].pt() << "\teta: " << CaloJetsVect[i].eta() << "\tphi: " << CaloJetsVect[i].phi() << "\tmass: " << CaloJetsVect[i].mass() << std::endl;
+
+      std::cout << "number of Matched Calo AK4 jets:  " << MatchedCaloJetsVect.size() << std::endl;
+      for(unsigned int i = 0; i < MatchedCaloJetsVect.size(); i++) std::cout << "  Calo AK4 jet  [" << i << "]\tpt: " << MatchedCaloJetsVect[i].pt() << "\teta: " << MatchedCaloJetsVect[i].eta() << "\tphi: " << MatchedCaloJetsVect[i].phi() << "\tmass: " << MatchedCaloJetsVect[i].mass() << std::endl;
+
+      std::cout << "number of DT segments:  " << DTSegmentvector.size() << std::endl;
+      std::cout << "number of DT global position:  " << DTSegment_Global_points.size() << std::endl;
+      for(unsigned int i = 0; i < DTSegment_Global_points.size(); i++) std::cout << "  Global position of DT segment [" << i << "]\teta: " << DTSegment_Global_points[i].eta() << "\tphi: " << DTSegment_Global_points[i].phi() << std::endl;
+
+      std::cout << "number of CSC segments:  " << CSCSegmentvector.size() << std::endl;
+      std::cout << "number of CSC global position:  " << CSCSegment_Global_points.size() << std::endl;
+      for(unsigned int i = 0; i < CSCSegment_Global_points.size(); i++) std::cout << "  Global position of CSC segment [" << i << "]\teta: " << CSCSegment_Global_points[i].eta() << "\tphi: " << CSCSegment_Global_points[i].phi() << std::endl;
+      //std::cout << "number of CHS AK8 jets:  " << CHSFatJetsVect.size() << std::endl;
+      //for(unsigned int i = 0; i < CHSFatJetsVect.size(); i++) std::cout << "  AK8 jet  [" << i << "]\tpt: " << CHSFatJetsVect[i].pt() << "\teta: " << CHSFatJetsVect[i].eta() << "\tphi: " << CHSFatJetsVect[i].phi() << "\tmass: " << CHSFatJetsVect[i].mass() << std::endl;
+    }
+
+
+
+
  
 
    //Fill tree
    tree -> Fill();
+   if(isVerbose) std::cout << "TREE FILLED!!!!!!!!!!!! Go to next event...--->" << std::endl;
+
    //ManualJets.clear();
    CHSJets.clear();
    CaloJets.clear();
