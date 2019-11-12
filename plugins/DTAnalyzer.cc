@@ -1,11 +1,12 @@
 #include "DTAnalyzer.h"
 
 
-DTAnalyzer::DTAnalyzer(edm::ParameterSet& PSet, edm::ConsumesCollector&& CColl)
+DTAnalyzer::DTAnalyzer(edm::ParameterSet& PSet, edm::ConsumesCollector&& CColl):
+dtSegmentToken(CColl.consumes<DTRecSegment4DCollection>(PSet.getParameter<edm::InputTag>("dtsegments")))
 {
     
     std::cout << " --- DTAnalyzer initialization ---" << std::endl;
-    dtSegmentToken = CColl.consumes<DTRecSegment4DCollection>(edm::InputTag("dt4DSegments"));
+
     // std::cout << "  sample            :\t" << Sample << std::endl;
     // if(ApplyEWK) std::cout << "  EWK file          :\t" << EWKFileName << std::endl;
     std::cout << std::endl;

@@ -1,11 +1,11 @@
 #include "CSCAnalyzer.h"
 
 
-CSCAnalyzer::CSCAnalyzer(edm::ParameterSet& PSet, edm::ConsumesCollector&& CColl)
+CSCAnalyzer::CSCAnalyzer(edm::ParameterSet& PSet, edm::ConsumesCollector&& CColl):
+CSCSegmentToken(CColl.consumes<CSCSegmentCollection>(PSet.getParameter<edm::InputTag>("cscsegments")))
 {
     
     std::cout << " --- CSCAnalyzer initialization ---" << std::endl;
-    CSCSegmentToken = CColl.consumes<CSCSegmentCollection>(edm::InputTag("cscSegments"));
     // std::cout << "  sample            :\t" << Sample << std::endl;
     // if(ApplyEWK) std::cout << "  EWK file          :\t" << EWKFileName << std::endl;
     std::cout << std::endl;

@@ -28,6 +28,8 @@ process.source = cms.Source("PoolSource",
         'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110243/0000/aodsim_1.root'
         #'/store/mc/RunIISummer16DR80Premix/ZJetsToNuNu_HT-800To1200_13TeV-madgraph/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/120000/FE57DDB4-DDBA-E611-A344-0025905A6064.root',
         #'file:/pnfs/desy.de/cms/tier2/store/data/Run2016G/MET/AOD/07Aug17-v1/110000/3C4239F2-E9A0-E711-82F7-02163E014117.root' 
+
+
     )
 )
 
@@ -282,7 +284,7 @@ process = regressionWeights(process)
 
 process.RandomNumberGeneratorService = cms.Service("RandomNumberGeneratorService",
   EGMSmearerElectrons = cms.PSet(
-    initialSeed = cms.untracked.uint32(8675389),
+    initialSeed = cms.untrackesd.uint32(8675389),
     engineName = cms.untracked.string('TRandom3')
   ),
   EGMSmearerPhotons = cms.PSet(
@@ -482,7 +484,7 @@ if isCalo:
 
 #slimmedMETs
 process.load('PhysicsTools.PatAlgos.producersLayer1.metProducer_cff')
-process.patMETs.computeMETSignificance = cms.bool(True)
+process.patMETs.computeMETSignsificance = cms.bool(True)
 process.patMETs.srcJets = cms.InputTag("patJets")
 process.load('PhysicsTools.PatAlgos.selectionLayer1.metSelector_cfi')
 
@@ -890,6 +892,12 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         pfCandidates = cms.InputTag('packedPFCandidates'),
         lostTracks = cms.InputTag('lostTracks'),
     ),
+    dtSet = cms.PSet(
+        dtsegments = cms.InputTag('dt4DSegments')
+        ),
+    cscSet = cms.PSet(
+        cscsegments = cms.InputTag('cscSegments')
+        ),
     minGenBpt = cms.double(0.),#(15.),#gen b quarks in acceptance
     maxGenBeta = cms.double(999.),#(2.4),#gen b quarks in acceptance
     #invmassVBF = cms.double(400.?),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
@@ -910,7 +918,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeAllJetPFCandidates = cms.bool(True), #Matched to either AK4 or AK8
     writeAllPFCandidates = cms.bool(False), #All PFCandidates. Large collection: Please write only if needed!
     performPreFiringStudies = cms.bool(True if ('unprefirable' in process.source.fileNames[0]) else False),
-    verbose = cms.bool(True),
+    verbose = cms.bool(False),
 )
 
 process.seq = cms.Sequence(

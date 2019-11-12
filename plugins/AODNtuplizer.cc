@@ -118,6 +118,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::ParameterSet TauPSet;
     edm::ParameterSet PhotonPSet;
     edm::ParameterSet VertexPSet;
+    edm::ParameterSet DTPSet;
+    edm::ParameterSet CSCSet;
     edm::ParameterSet PFCandidatePSet;
     edm::EDGetTokenT<reco::PFJetCollection> jetToken;
     //edm::EDGetTokenT<std::vector<pat::MET> > metToken;
@@ -234,6 +236,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    TauPSet(iConfig.getParameter<edm::ParameterSet>("tauSet")),
    PhotonPSet(iConfig.getParameter<edm::ParameterSet>("photonSet")),
    VertexPSet(iConfig.getParameter<edm::ParameterSet>("vertexSet")),
+   DTPSet(iConfig.getParameter<edm::ParameterSet>("dtSet")),
+   CSCSet(iConfig.getParameter<edm::ParameterSet>("cscSet")),
    PFCandidatePSet(iConfig.getParameter<edm::ParameterSet>("pfCandidateSet")),
    MinGenBpt(iConfig.getParameter<double>("minGenBpt")),
    MaxGenBeta(iConfig.getParameter<double>("maxGenBeta")),
@@ -275,8 +279,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    theRecoPhotonAnalyzer   = new RecoPhotonAnalyzer(PhotonPSet, consumesCollector());
    theVertexAnalyzer       = new VertexAnalyzer(VertexPSet, consumesCollector());
    thePFCandidateAnalyzer  = new PFCandidateAnalyzer(PFCandidatePSet, consumesCollector());
-   theDTAnalyzer           = new DTAnalyzer(GenPSet, consumesCollector());
-   theCSCAnalyzer          = new CSCAnalyzer(GenPSet, consumesCollector());
+   theDTAnalyzer           = new DTAnalyzer(DTPSet, consumesCollector());
+   theCSCAnalyzer          = new CSCAnalyzer(CSCSet, consumesCollector());
 
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
