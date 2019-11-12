@@ -1991,3 +1991,89 @@ void ObjectsFormat::ResetCSCSegmentType(CSCSegmentType& I) {
 
 std::string ObjectsFormat::ListCSCSegmentType() {return "eta/F:phi/F:time/F";}
 
+//**************************//
+//      Track              //
+//************************//
+
+void ObjectsFormat::FillTrackType(TrackType& I, const reco::Track* C, bool gen_flag) {
+  I.pt              = C->pt();
+  I.eta             = C->eta();
+  I.phi             = C->phi();
+  I.px              = C->px();
+  I.py              = C->py();
+  I.pz              = C->pz();
+  I.dxy             = C->dxy();
+  I.dxyError        = C->dxyError();
+  I.dz              = C->dz();
+  I.dzError         = C->dzError();
+  //I.nHits           = C->numberOfHits();
+  //I.nPixelHits      = C->numberOfPixelHits();
+  //I.lostInnerHits   = C->lostInnerHits();
+  I.charge          = C->charge();
+  ////I.hcalFraction    = C->hcalFraction();
+  I.POCA_x          = C->vx();
+  I.POCA_y          = C->vy();
+  I.POCA_z          = C->vz();
+  I.POCA_phi        = C->phi();
+  ////I.longLived       = C->longLived();
+  I.ptError         = C->ptError();
+  I.etaError        = C->etaError();
+  I.phiError        = C->phiError();
+  I.theta           = C->theta();
+  I.thetaError      = C->thetaError();
+  //I.innerDetId      = C->pseudoTrack().innerDetId();
+  //I.innerPosition_x = C->pseudoTrack().innerPosition().x();
+  //I.innerPosition_y = C->pseudoTrack().innerPosition().y();
+  //I.innerPosition_z = C->pseudoTrack().innerPosition().z();
+  //I.innerMomentum_x = C->pseudoTrack().innerMomentum().x();
+  //I.innerMomentum_y = C->pseudoTrack().innerMomentum().y();
+  //I.innerMomentum_z = C->pseudoTrack().innerMomentum().z();
+  I.chi2            = C->chi2();
+  I.ndof            = C->ndof();
+  I.normalizedChi2  = C->normalizedChi2();
+  I.recHitsSize     = C->recHitsSize();
+  I.isGenMatched    = gen_flag;
+}
+
+
+void ObjectsFormat::ResetTrackType(TrackType& I) {
+  I.pt              = -1.;
+  I.eta             = -9.;
+  I.phi             = -9.;
+  I.px              = -99.;
+  I.py              = -99.;
+  I.pz              = -99.;
+  I.dxy             = -99.;
+  I.dxyError        = -99.;
+  I.dz              = -99.;
+  I.dzError         = -99.;
+  //I.nHits           = -1;
+  //I.nPixelHits      = -1;
+  //I.lostInnerHits   = -9;
+  I.charge          = -99;
+  //I.hcalFraction    = -1.;
+  I.POCA_x          = -99.;
+  I.POCA_y          = -99.;
+  I.POCA_z          = -99.;
+  I.POCA_phi        = -9.;
+  //I.longLived       = -1;
+  I.ptError         = -1.;
+  I.etaError        = -1.;
+  I.phiError        = -1.;
+  I.theta           = -9.;
+  I.thetaError      = -1.;
+  //I.innerDetId      = -1;
+  //I.innerPosition_x = -9999.;
+  //I.innerPosition_y = -9999.;
+  //I.innerPosition_z = -9999.;
+  //I.innerMomentum_x = -9999.;
+  //I.innerMomentum_y = -9999.;
+  //I.innerMomentum_z = -9999.;
+  I.chi2            = -1.;
+  I.ndof            = -1;
+  I.normalizedChi2  = -1.;
+  I.recHitsSize     = -1;
+  I.isGenMatched    = false;
+}
+
+std::string ObjectsFormat::ListTrackType() {return"pt/F:eta/F:phi/F:px/F:py/F:pz/F:dxy/F:dxyError/F:dz/F:dzError/F:charge/I:POCA_x/F:POCA_y/F:POCA_z/F:POCA_phi/I:ptError/F:etaError/F:phiError/F:theta/F:thetaError/F:chi2/F:ndof/F:normalizedChi2/F:recHitsSize/I:isGenMatched/O";}

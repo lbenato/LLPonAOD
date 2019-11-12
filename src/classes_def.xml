@@ -6,6 +6,7 @@
   <class name="PFCandidateType"/>
   <class name="DT4DSegmentType"/>
   <class name="CSCSegmentType"/>
+  <class name="TrackType"/>
   <class name="std::vector<RecoJetType>"/>
   <class name="std::vector<CaloJetType>"/>
   <class name="std::vector<GenPType>"/>
@@ -13,6 +14,7 @@
   <class name="std::vector<PFCandidateType>"/>
   <class name="std::vector<DT4DSegmentType>"/>
   <class name="std::vector<CSCSegmentType>"/>
+  <class name="std::vector<TrackType>"/>
 
 
 </lcgdict>

@@ -13,7 +13,7 @@ namespace {
     PFCandidateType dummy4;
     DT4DSegmentType dummy5;
     CSCSegmentType dummy6;
-
+    TrackType dummy7;
 
 
     //Vector of structures                                                      
@@ -24,5 +24,6 @@ namespace {
     std::vector<PFCandidateType> dummyVector4;
     std::vector<DT4DSegmentType> dummyVector5;
     std::vector<CSCSegmentType> dummyVector6;
+    std::vector<TrackType> dummyVector7;
   };
 }

@@ -951,6 +951,70 @@ CSCSegmentType(): eta(-9.), phi(-9.), time(-9.){}
 };
 
 
+struct TrackType {
+TrackType():
+    charge(-99), pt(-1.), eta(-9.), phi(-9.),
+      px(-99.), py(-99.), pz(-99.),
+    dxy(-99.), dz(-99.), POCA_x(-99.), POCA_y(-99.), POCA_z(-99.), POCA_phi(-9.),
+    ptError(-1.), etaError(-1.), phiError(-1.), dxyError(-99.), dzError(-99.), theta(-9.), thetaError(-1.),
+    chi2(-1.), ndof(-1), normalizedChi2(-1.),
+    //nHits(-1), nPixelHits(-1), lostInnerHits(-9),
+      recHitsSize(-1), isGenMatched(false) {}
+    //hcalFraction(-1.), longLived(-1)
+    //innerDetId(-1), innerPosition_x(-9999.), innerPosition_y(-9999.), innerPosition_z(-9999.),
+    //innerMomentum_x(-9999.), innerMomentum_y(-9999.), innerMomentum_z(-9999.),
+
+    // General
+    int   charge;
+    float pt;
+    float eta;
+    float phi;
+
+    float px;
+    float py;
+    float pz;
+
+    // Tracking:
+    float dxy;              // Transverse impact parameter
+    float dz;               // Longitudinal impact parameter
+    float POCA_x;           // Point Of Closest Approach coordinates
+    float POCA_y;
+    float POCA_z;
+    float POCA_phi;         // Momentum direction (from tracking-only information)
+
+    // Additional tracking information (for pT > 0.95 GeV)
+    float ptError;
+    float etaError;
+    float phiError;
+    float dxyError;
+    float dzError;
+    float theta;
+    float thetaError;
+
+    float chi2;
+    int ndof;
+    float normalizedChi2;
+
+  //int   nHits;
+  //int   nPixelHits;
+  //int   lostInnerHits;
+   
+    int   recHitsSize;
+    bool  isGenMatched;
+
+    // Not used:
+    //float hcalFraction;
+    //int longLived;
+
+    // Not stored in miniAOD:
+    //int innerDetId;         // Detector with the innermost hit
+    //float innerPosition_x;  // Position of the innermost hit
+    //float innerPosition_y;
+    //float innerPosition_z;
+    //float innerMomentum_x;  // Momentum direction at the innermost hit
+    //float innerMomentum_y;
+    //float innerMomentum_z;
+};
 
 
 #endif

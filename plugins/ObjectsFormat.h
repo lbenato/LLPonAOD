@@ -47,6 +47,7 @@ class ObjectsFormat {
         static void FillSimplifiedJetType(SimplifiedJetType&, const pat::Jet*, bool);
         static void FillDT4DSegmentType(DT4DSegmentType&, const DTRecSegment4D* R, const GlobalPoint* P);
         static void FillCSCSegmentType(CSCSegmentType&, const CSCSegment* R, const GlobalPoint* P);
+        static void FillTrackType(TrackType&, const reco::Track* R, bool);
 
 
         static void ResetLeptonType(LeptonType&);
@@ -68,6 +69,7 @@ class ObjectsFormat {
         static void ResetSimplifiedJetType(SimplifiedJetType&);
         static void ResetDT4DSegmentType(DT4DSegmentType&);
         static void ResetCSCSegmentType(CSCSegmentType&);
+        static void ResetTrackType(TrackType&);
 
         static std::string ListLeptonType();
         static std::string ListPhotonType();
@@ -88,6 +90,7 @@ class ObjectsFormat {
         static std::string ListSimplifiedJetType();
         static std::string ListDT4DSegmentType();
         static std::string ListCSCSegmentType();
+        static std::string ListTrackType();
 
     private:
 

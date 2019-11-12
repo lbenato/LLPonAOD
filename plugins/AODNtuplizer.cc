@@ -82,6 +82,7 @@
 #include "ObjectsFormat.h"
 #include "DTAnalyzer.h"
 #include "CSCAnalyzer.h"
+#include "StandAloneMuonsAnalyzer.h"
 
 //
 // class declaration
@@ -118,9 +119,11 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     edm::ParameterSet TauPSet;
     edm::ParameterSet PhotonPSet;
     edm::ParameterSet VertexPSet;
+    edm::ParameterSet PFCandidatePSet;
     edm::ParameterSet DTPSet;
     edm::ParameterSet CSCSet;
-    edm::ParameterSet PFCandidatePSet;
+    edm::ParameterSet StandAloneMuonsPSet;
+    edm::ParameterSet DisplacedStandAloneMuonsPSet;
     edm::EDGetTokenT<reco::PFJetCollection> jetToken;
     //edm::EDGetTokenT<std::vector<pat::MET> > metToken;
 
@@ -139,6 +142,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     PFCandidateAnalyzer* thePFCandidateAnalyzer;
     DTAnalyzer* theDTAnalyzer;
     CSCAnalyzer* theCSCAnalyzer;
+    StandAloneMuonsAnalyzer* theStandAloneMuonsAnalyzer;
+    StandAloneMuonsAnalyzer* theDisplacedStandAloneMuonsAnalyzer;
 
     double MinGenBpt, MaxGenBeta;
     double InvmassVBF, DetaVBF;//VBF tagging
@@ -158,7 +163,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     GenPType GenHiggs;
     std::vector<DT4DSegmentType> DTRecSegments4D;    
     std::vector<CSCSegmentType> CSCSegments;
-
+    std::vector<TrackType> StandAloneMuons;
+    std::vector<TrackType> DisplacedStandAloneMuons;
 
     std::vector<PFCandidateType> PFCandidates;
 
@@ -192,6 +198,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int nMatchedCSCsegmentstob;
     long int nMatchedDTsegmentstoVBF;
     long int nMatchedCSCsegmentstoVBF;
+    long int nStandAloneMuons, nMatchedStandAloneMuons;
+    long int nDisplacedStandAloneMuons, nMatchedDisplacedStandAloneMuons;
     
     AddFourMomenta addP4;
     float HT;
@@ -236,9 +244,11 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    TauPSet(iConfig.getParameter<edm::ParameterSet>("tauSet")),
    PhotonPSet(iConfig.getParameter<edm::ParameterSet>("photonSet")),
    VertexPSet(iConfig.getParameter<edm::ParameterSet>("vertexSet")),
+   PFCandidatePSet(iConfig.getParameter<edm::ParameterSet>("pfCandidateSet")),
    DTPSet(iConfig.getParameter<edm::ParameterSet>("dtSet")),
    CSCSet(iConfig.getParameter<edm::ParameterSet>("cscSet")),
-   PFCandidatePSet(iConfig.getParameter<edm::ParameterSet>("pfCandidateSet")),
+   StandAloneMuonsPSet(iConfig.getParameter<edm::ParameterSet>("standaloneMuonsSet")),
+   DisplacedStandAloneMuonsPSet(iConfig.getParameter<edm::ParameterSet>("displacedStandaloneMuonsSet")),
    MinGenBpt(iConfig.getParameter<double>("minGenBpt")),
    MaxGenBeta(iConfig.getParameter<double>("maxGenBeta")),
    InvmassVBF(iConfig.getParameter<double>("invmassVBF")),
@@ -281,7 +291,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    thePFCandidateAnalyzer  = new PFCandidateAnalyzer(PFCandidatePSet, consumesCollector());
    theDTAnalyzer           = new DTAnalyzer(DTPSet, consumesCollector());
    theCSCAnalyzer          = new CSCAnalyzer(CSCSet, consumesCollector());
-
+   theStandAloneMuonsAnalyzer          = new StandAloneMuonsAnalyzer(StandAloneMuonsPSet,  consumesCollector());
+   theDisplacedStandAloneMuonsAnalyzer = new StandAloneMuonsAnalyzer(DisplacedStandAloneMuonsPSet,  consumesCollector());
 
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
@@ -328,6 +339,8 @@ AODNtuplizer::~AODNtuplizer()
    delete thePFCandidateAnalyzer;
    delete theDTAnalyzer;
    delete theCSCAnalyzer;
+   delete theStandAloneMuonsAnalyzer;
+   delete theDisplacedStandAloneMuonsAnalyzer;
 }
 
 
@@ -353,6 +366,8 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    nJets = nCaloJets = 0;
    nElectrons = nMuons = nTaus = nPhotons = 0;
    nTightMuons = nTightElectrons = 0;
+   nStandAloneMuons = nDisplacedStandAloneMuons =0;
+   nMatchedStandAloneMuons = nMatchedDisplacedStandAloneMuons =0;
    isMC = false;
    isVBF = false;
    EventNumber = LumiNumber = RunNumber = nPV = 0;
@@ -1283,6 +1298,120 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     nMatchedCSCsegmentstoVBF = MatchedCSCSegmenttoVBFVect.size();
 
 
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // StandAloneMuons
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   
+   std::vector<reco::Track> StandAloneMuonsVect = theStandAloneMuonsAnalyzer->FillStandAloneMuonsVector(iEvent);
+   for(unsigned int i =0; i< StandAloneMuonsVect.size();i++) StandAloneMuons.push_back( TrackType() );
+   nStandAloneMuons = StandAloneMuonsVect.size();
+   std::vector<bool> GenStandAloneMuonsFlag;
+   for(unsigned int i =0; i< StandAloneMuonsVect.size();i++) GenStandAloneMuonsFlag.push_back(false);
+
+   //One way to implement jet-gen b-quark matching is performed here
+   std::vector<reco::Track> MatchedStandAloneMuonsVect;
+
+   //Matching the b quarks to StandAloneMuons
+   //Starting point: b-quark
+   int matching_index_StandAloneMuons;//local variable
+   float delta_R_StandAloneMuons;//local variable
+   float current_delta_R_StandAloneMuons;//local variable
+   for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+      {
+	delta_R_StandAloneMuons = 1000.;
+	current_delta_R_StandAloneMuons = 1000.;
+	matching_index_StandAloneMuons = -1;
+	for(unsigned int a = 0; a<StandAloneMuonsVect.size(); a++)
+	  {
+	    current_delta_R_StandAloneMuons = fabs(reco::deltaR(StandAloneMuonsVect[a].eta(),StandAloneMuonsVect[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+	    //std::cout << "comparing gen b n. " << b << " and standalone muon n." << a << std::endl;
+	    //std::cout << current_delta_R_StandAloneMuons << std::endl;
+	    if(current_delta_R_StandAloneMuons<0.4 && current_delta_R_StandAloneMuons<delta_R_StandAloneMuons)
+	      //this implements all the reasonable possibilities!
+	      {
+	      delta_R_StandAloneMuons = min(delta_R_StandAloneMuons,current_delta_R_StandAloneMuons);
+	      matching_index_StandAloneMuons = a;
+	      MatchedStandAloneMuonsVect.push_back(StandAloneMuonsVect[a]);//duplicates possible, must be removed afterwards!
+	      }
+	  }
+	if(matching_index_StandAloneMuons>=0){
+	  //std::cout << "standalone muon matched: " << matching_index_StandAloneMuons  <<std::endl;
+	  GenStandAloneMuonsFlag.at(matching_index_StandAloneMuons) = true;
+	  //number_of_b_matched_to_CHSJets++;//wait
+	}
+     }
+
+
+    //Remove duplicates from Matched CHSJets Vector
+    for(unsigned int r = 0; r<MatchedStandAloneMuonsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedStandAloneMuonsVect.size(); s++)
+	  {
+	    if(r!=s && MatchedStandAloneMuonsVect[s].pt()==MatchedStandAloneMuonsVect[r].pt()) MatchedStandAloneMuonsVect.erase(MatchedStandAloneMuonsVect.begin()+s);
+	  }//duplicates removed
+      }
+    nMatchedStandAloneMuons = MatchedStandAloneMuonsVect.size();//wait
+
+
+
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   // DisplacedStandAloneMuons
+   //------------------------------------------------------------------------------------------
+   //------------------------------------------------------------------------------------------
+   
+   std::vector<reco::Track> DisplacedStandAloneMuonsVect = theDisplacedStandAloneMuonsAnalyzer->FillStandAloneMuonsVector(iEvent);
+   for(unsigned int i =0; i< DisplacedStandAloneMuonsVect.size();i++) DisplacedStandAloneMuons.push_back( TrackType() );
+   nDisplacedStandAloneMuons = DisplacedStandAloneMuonsVect.size();
+   std::vector<bool> GenDisplacedStandAloneMuonsFlag;
+   for(unsigned int i =0; i< DisplacedStandAloneMuonsVect.size();i++) GenDisplacedStandAloneMuonsFlag.push_back(false);
+
+   //One way to implement jet-gen b-quark matching is performed here
+   std::vector<reco::Track> MatchedDisplacedStandAloneMuonsVect;
+
+   //Matching the b quarks to DisplacedStandAloneMuons
+   //Starting point: b-quark
+   int matching_index_DisplacedStandAloneMuons;//local variable
+   float delta_R_DisplacedStandAloneMuons;//local variable
+   float current_delta_R_DisplacedStandAloneMuons;//local variable
+   for(unsigned int b = 0; b<GenBquarksVect.size(); b++)
+      {
+	delta_R_DisplacedStandAloneMuons = 1000.;
+	current_delta_R_DisplacedStandAloneMuons = 1000.;
+	matching_index_DisplacedStandAloneMuons = -1;
+	for(unsigned int a = 0; a<DisplacedStandAloneMuonsVect.size(); a++)
+	  {
+	    current_delta_R_DisplacedStandAloneMuons = fabs(reco::deltaR(DisplacedStandAloneMuonsVect[a].eta(),DisplacedStandAloneMuonsVect[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
+	    //std::cout << "comparing gen b n. " << b << " and displaced standalone muon n." << a << std::endl;
+	    //std::cout << current_delta_R_DisplacedStandAloneMuons << std::endl;
+	    if(current_delta_R_DisplacedStandAloneMuons<0.4 && current_delta_R_DisplacedStandAloneMuons<delta_R_DisplacedStandAloneMuons)
+	      //this implements all the reasonable possibilities!
+	      {
+	      delta_R_DisplacedStandAloneMuons = min(delta_R_DisplacedStandAloneMuons,current_delta_R_DisplacedStandAloneMuons);
+	      matching_index_DisplacedStandAloneMuons = a;
+	      MatchedDisplacedStandAloneMuonsVect.push_back(DisplacedStandAloneMuonsVect[a]);//duplicates possible, must be removed afterwards!
+	      }
+	  }
+	if(matching_index_DisplacedStandAloneMuons>=0){
+	  //std::cout << "displaced standalone muon matched: " << matching_index_DisplacedStandAloneMuons  <<std::endl;
+	  GenDisplacedStandAloneMuonsFlag.at(matching_index_DisplacedStandAloneMuons) = true;
+	  //number_of_b_matched_to_CHSJets++;//wait
+	}
+     }
+
+
+    //Remove duplicates from Matched CHSJets Vector
+    for(unsigned int r = 0; r<MatchedDisplacedStandAloneMuonsVect.size(); r++)
+      {
+	for(unsigned int s = 0; s<MatchedDisplacedStandAloneMuonsVect.size(); s++)
+	  {
+	    if(r!=s && MatchedDisplacedStandAloneMuonsVect[s].pt()==MatchedDisplacedStandAloneMuonsVect[r].pt()) MatchedDisplacedStandAloneMuonsVect.erase(MatchedDisplacedStandAloneMuonsVect.begin()+s);
+	  }//duplicates removed
+      }
+    nMatchedDisplacedStandAloneMuons = MatchedDisplacedStandAloneMuonsVect.size();//wait
+
    //-----------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
    // Fill objects
@@ -1321,6 +1450,11 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    //CSCSegments
    for(unsigned int i =0; i< CSCSegmentvector.size();i++) ObjectsFormat::FillCSCSegmentType(CSCSegments[i], &CSCSegmentvector[i],&CSCSegment_Global_points[i]);
+
+   //StandAloneMuons
+   for(unsigned int i =0; i< StandAloneMuonsVect.size();i++) ObjectsFormat::FillTrackType(StandAloneMuons[i], &StandAloneMuonsVect[i], GenStandAloneMuonsFlag[i]);
+   //DisplacedStandAloneMuons
+   for(unsigned int i =0; i< DisplacedStandAloneMuonsVect.size();i++) ObjectsFormat::FillTrackType(DisplacedStandAloneMuons[i], &DisplacedStandAloneMuonsVect[i],GenDisplacedStandAloneMuonsFlag[i]);
       
 
 
@@ -1349,6 +1483,12 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       std::cout << "number of Matched Calo AK4 jets:  " << MatchedCaloJetsVect.size() << std::endl;
       for(unsigned int i = 0; i < MatchedCaloJetsVect.size(); i++) std::cout << "  Calo AK4 jet  [" << i << "]\tpt: " << MatchedCaloJetsVect[i].pt() << "\teta: " << MatchedCaloJetsVect[i].eta() << "\tphi: " << MatchedCaloJetsVect[i].phi() << "\tmass: " << MatchedCaloJetsVect[i].mass() << std::endl;
+
+      std::cout << "number of StandAloneMuons: " << StandAloneMuonsVect.size() << std::endl;
+      for(unsigned int i = 0; i < StandAloneMuonsVect.size(); i++) std::cout << "  StandAloneMuons  [" << i << "]\tpt: " << StandAloneMuonsVect[i].pt() << "\teta: " << StandAloneMuonsVect[i].eta() << "\tphi: " << StandAloneMuonsVect[i].phi() << std::endl;
+
+      std::cout << "number of DisplacedStandAloneMuons: " << DisplacedStandAloneMuonsVect.size() << std::endl;
+      for(unsigned int i = 0; i < DisplacedStandAloneMuonsVect.size(); i++) std::cout << "  DisplacedStandAloneMuons  [" << i << "]\tpt: " << DisplacedStandAloneMuonsVect[i].pt() << "\teta: " << DisplacedStandAloneMuonsVect[i].eta() << "\tphi: " << DisplacedStandAloneMuonsVect[i].phi() << std::endl;
 
       std::cout << "number of DT segments:  " << DTSegmentvector.size() << std::endl;
       std::cout << "number of DT global position:  " << DTSegment_Global_points.size() << std::endl;
@@ -1438,7 +1578,10 @@ AODNtuplizer::beginJob()
    tree -> Branch("number_of_b_matched_to_CSCSegment", &number_of_b_matched_to_CSCSegment, "number_of_b_matched_to_CSCSegment/L");
    tree -> Branch("number_of_VBF_matched_to_CSCSegment", &number_of_VBF_matched_to_CSCSegment, "number_of_VBF_matched_to_CSCSegment/L");
    tree -> Branch("number_of_VBF_matched_to_DTSegment4D", &number_of_VBF_matched_to_DTSegment4D, "number_of_VBF_matched_to_DTSegment4D/L");
-
+   tree -> Branch("nStandAloneMuons", &nStandAloneMuons, "nStandAloneMuons/L");
+   tree -> Branch("nDisplacedStandAloneMuons", &nDisplacedStandAloneMuons, "nDisplacedStandAloneMuons/L");
+   tree -> Branch("nMatchedStandAloneMuons", &nMatchedStandAloneMuons, "nMatchedStandAloneMuons/L");
+   tree -> Branch("nMatchedDisplacedStandAloneMuons", &nMatchedDisplacedStandAloneMuons, "nMatchedDisplacedStandAloneMuons/L");
    
    tree -> Branch("Flag_BadPFMuon", &BadPFMuonFlag, "Flag_BadPFMuon/O");
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
@@ -1453,6 +1596,8 @@ AODNtuplizer::beginJob()
    tree -> Branch("GenBquarks", &GenBquarks);
    tree -> Branch("DTSegments", &DTRecSegments4D);
    tree -> Branch("CSCSegments", &CSCSegments);
+   tree -> Branch("StandAloneMuons", &StandAloneMuons);
+   tree -> Branch("DisplacedStandAloneMuons", &DisplacedStandAloneMuons);
    //tree -> Branch("RecoMEt", &RecoMEt.pt, RecoObjectsFormat::ListRecoMEtType().c_str());
    tree -> Branch("MEt", &MEt.pt, ObjectsFormat::ListMEtType().c_str());
    tree -> Branch("CHSJets", &CHSJets);
