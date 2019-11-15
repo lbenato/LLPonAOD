@@ -173,7 +173,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     CandidateType VBF;//VBF tagging
 
     std::map<std::string, bool> TriggerMap;
-    //std::map<std::string, bool> MetFiltersMap;
+    std::map<std::string, bool> MetFiltersMap;
 
     bool isVerbose;
     bool isMC;
@@ -297,8 +297,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
    std::vector<std::string> TriggerList(TriggerPSet.getParameter<std::vector<std::string> >("paths"));
    for(unsigned int i = 0; i < TriggerList.size(); i++) TriggerMap[ TriggerList[i] ] = false;
    //for(unsigned int i = 0; i < TriggerList.size(); i++) PrescalesTriggerMap[ TriggerList[i] ] = -1;
-   //std::vector<std::string> MetFiltersList(TriggerPSet.getParameter<std::vector<std::string> >("metpaths"));
-   //for(unsigned int i = 0; i < MetFiltersList.size(); i++) MetFiltersMap[ MetFiltersList[i] ] = false;
+   std::vector<std::string> MetFiltersList(TriggerPSet.getParameter<std::vector<std::string> >("metpaths"));
+   for(unsigned int i = 0; i < MetFiltersList.size(); i++) MetFiltersMap[ MetFiltersList[i] ] = false;
    //std::vector<std::string> L1FiltersList(TriggerPSet.getParameter<std::vector<std::string> >("l1filters"));
    //for(unsigned int i = 0; i < L1FiltersList.size(); i++) L1FiltersMap[ L1FiltersList[i] ] = false;
 
@@ -386,6 +386,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    m_pi = 0.;
    gen_b_radius = -1.;
    Prefired = false;
+   AtLeastOneTrigger = false;
    nPFCandidates = nPFCandidatesTrack = nPFCandidatesHighPurityTrack = nPFCandidatesFullTrackInfo = 0;
    number_of_PV = number_of_SV = 0;
 
@@ -407,7 +408,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
    //if(isVerbose) std::cout << "Trigger and met filters" << std::endl;
    theRecoTriggerAnalyzer->FillTriggerMap(iEvent, TriggerMap);
-   //theRecoTriggerAnalyzer->FillMetFiltersMap(iEvent, MetFiltersMap);
+   theRecoTriggerAnalyzer->FillMetFiltersMap(iEvent, MetFiltersMap);
    BadPFMuonFlag = theRecoTriggerAnalyzer->GetBadPFMuonFlag(iEvent);
    BadChCandFlag = theRecoTriggerAnalyzer->GetBadChCandFlag(iEvent);
    //theRecoTriggerAnalyzer->FillL1FiltersMap(iEvent, L1FiltersMap);
@@ -1587,7 +1588,7 @@ AODNtuplizer::beginJob()
    tree -> Branch("Flag_BadChCand", &BadChCandFlag, "Flag_BadChCand/O");
    // Set trigger branches
    for(auto it = TriggerMap.begin(); it != TriggerMap.end(); it++) tree->Branch(it->first.c_str(), &(it->second), (it->first+"/O").c_str());
-   //for(auto it = MetFiltersMap.begin(); it != MetFiltersMap.end(); it++) tree->Branch(it->first.c_str(), &(it->second), (it->first+"/O").c_str());
+   for(auto it = MetFiltersMap.begin(); it != MetFiltersMap.end(); it++) tree->Branch(it->first.c_str(), &(it->second), (it->first+"/O").c_str());
    //for(auto it = L1FiltersMap.begin(); it != L1FiltersMap.end(); it++) tree->Branch(it->first.c_str(), &(it->second), (it->first+"/O").c_str());
 
    //tree -> Branch("ManualJets", &ManualJets);
