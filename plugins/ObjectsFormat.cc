@@ -1979,6 +1979,10 @@ void ObjectsFormat::FillCSCSegmentType(CSCSegmentType& I, const CSCSegment* R, c
     I.eta         = P->eta();
     I.phi         = P->phi();
     I.time        = R->time();
+    I.layer       = R->cscDetId().layer();
+    I.ring        = R->cscDetId().ring();
+    I.station     = R->cscDetId().station();
+    I.endcap       = R->cscDetId().endcap();
 
 }
 
@@ -1986,10 +1990,14 @@ void ObjectsFormat::ResetCSCSegmentType(CSCSegmentType& I) {
     I.eta         = -9.;
     I.phi         = -9.;
     I.time        = -9.;
+    I.layer       = -9;
+    I.ring        = -9;
+    I.station     = -9;
+    I.endcap      = -9;
 
 }
 
-std::string ObjectsFormat::ListCSCSegmentType() {return "eta/F:phi/F:time/F";}
+std::string ObjectsFormat::ListCSCSegmentType() {return "eta/F:phi/F:time/F:layer/I:ring/I:station/I:endcap/I";}
 
 //**************************//
 //      Track              //

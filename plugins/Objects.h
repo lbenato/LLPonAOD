@@ -942,11 +942,15 @@ DT4DSegmentType(): eta(-9.), phi(-9.), wheel(-9), sector(-9), station(-9){}
 };
 
 struct CSCSegmentType {
-CSCSegmentType(): eta(-9.), phi(-9.), time(-9.){}
+CSCSegmentType(): eta(-9.), phi(-9.), time(-9.), layer(-9), ring(-9) , station(-9), endcap(-9){}
 
     float eta;
     float phi;
     float time;
+    int layer;
+    int ring;
+    int station;
+    int endcap;
 
 };
 
