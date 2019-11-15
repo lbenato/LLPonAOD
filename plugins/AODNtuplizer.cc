@@ -154,6 +154,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     bool PerformPreFiringStudies;
 
     std::vector<JetType> CHSJets;
+    std::vector<JetType> VBFPairJets;
     //std::vector<RecoJetType> ManualJets;
     std::vector<CaloJetType> CaloJets;
     //std::vector<LeptonType> Muons; //maybe later!
@@ -194,6 +195,8 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int number_of_b_matched_to_CSCSegment;
     long int number_of_VBF_matched_to_DTSegment4D;
     long int number_of_VBF_matched_to_CSCSegment;
+    long int nDTSegments, nDTSegmentsStation1, nDTSegmentsStation2, nDTSegmentsStation3, nDTSegmentsStation4;
+    long int nCSCSegments;
     long int nMatchedDTsegmentstob;
     long int nMatchedCSCsegmentstob;
     long int nMatchedDTsegmentstoVBF;
@@ -367,6 +370,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    nElectrons = nMuons = nTaus = nPhotons = 0;
    nTightMuons = nTightElectrons = 0;
    nStandAloneMuons = nDisplacedStandAloneMuons =0;
+   nDTSegments = nDTSegmentsStation1 = nDTSegmentsStation2 = nDTSegmentsStation3 = nDTSegmentsStation4 = nCSCSegments = 0;
    nMatchedStandAloneMuons = nMatchedDisplacedStandAloneMuons =0;
    isMC = false;
    isVBF = false;
@@ -440,6 +444,9 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
 
    HT = theCHSJetAnalyzer->CalculateHT(iEvent,3,15,3.);
+
+   if(HT<100) return;//Avoid events with low HT
+
 
    //------------------------------------------------------------------------------------------
    //------------------------------------------------------------------------------------------
@@ -1101,16 +1108,24 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
    
 
-   std::vector<DTRecSegment4D> DTSegmentvector = theDTAnalyzer->FillDTSegment4DVector(iEvent);
-   std::vector<GlobalPoint> DTSegment_Global_points = theDTAnalyzer->FillGlobalPointDT4DSegmentVector(iEvent, iSetup,DTSegmentvector);
-   for(unsigned int i =0; i< DTSegmentvector.size();i++) DTRecSegments4D.push_back( DT4DSegmentType() );
+   std::vector<DTRecSegment4D> DTSegmentVect = theDTAnalyzer->FillDTSegment4DVector(iEvent);
+   std::vector<GlobalPoint> DTSegment_Global_points = theDTAnalyzer->FillGlobalPointDT4DSegmentVector(iEvent, iSetup,DTSegmentVect);
+   for(unsigned int i =0; i< DTSegmentVect.size();i++) DTRecSegments4D.push_back( DT4DSegmentType() );
 
+   nDTSegments = DTSegmentVect.size();
+   for(unsigned int i = 0; i < DTSegmentVect.size(); i++)
+     {
+       if(DTSegmentVect.at(i).chamberId().station()==1) nDTSegmentsStation1++;
+       if(DTSegmentVect.at(i).chamberId().station()==2) nDTSegmentsStation2++;
+       if(DTSegmentVect.at(i).chamberId().station()==3) nDTSegmentsStation3++;
+       if(DTSegmentVect.at(i).chamberId().station()==4) nDTSegmentsStation4++;
+     }
    
       // Match DT Segments to Gen b quarks
    
       // for gen matching, to be filled later
     std::vector<bool> DTGenMatched;
-    for(unsigned int i = 0; i < DTSegmentvector.size(); i++) DTGenMatched.push_back(false);//to be implemented later
+    for(unsigned int i = 0; i < DTSegmentVect.size(); i++) DTGenMatched.push_back(false);//to be implemented later
 
     std::vector<DTRecSegment4D> MatchedDTSegment4DVect;
     //Matching the b quarks to AK4 calo jets
@@ -1123,7 +1138,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         delta_R_DTSegment4D = 1000.;
         current_delta_R_DTSegment4D = 1000.;
         matching_index_DTSegment4D = -1;
-        for(unsigned int a = 0; a<DTSegmentvector.size(); a++)
+        for(unsigned int a = 0; a<DTSegmentVect.size(); a++)
             {
             current_delta_R_DTSegment4D = fabs(reco::deltaR(DTSegment_Global_points[a].eta(),DTSegment_Global_points[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
             if(current_delta_R_DTSegment4D<0.4 && current_delta_R_DTSegment4D<delta_R_DTSegment4D)
@@ -1133,7 +1148,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 matching_index_DTSegment4D = a;
                 DTGenMatched[a] = true;
                 //JetsVect[a].addUserInt("original_jet_index",a+1);
-                MatchedDTSegment4DVect.push_back(DTSegmentvector[a]);//avoid duplicates!
+                MatchedDTSegment4DVect.push_back(DTSegmentVect[a]);//avoid duplicates!
                 }
             }
         if(matching_index_DTSegment4D>=0){
@@ -1155,7 +1170,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
           // for gen matching, to be filled later
     std::vector<bool> DTVBFMatched;
-    for(unsigned int i = 0; i < DTSegmentvector.size(); i++) DTVBFMatched.push_back(false);//to be implemented later
+    for(unsigned int i = 0; i < DTSegmentVect.size(); i++) DTVBFMatched.push_back(false);//to be implemented later
 
     std::vector<DTRecSegment4D> MatchedDTSegment4DtoVBFVect;
     //Matching the b quarks to AK4 calo jets
@@ -1168,7 +1183,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         delta_R_DTSegment4D_VBF = 1000.;
         current_delta_R_DTSegment4D_VBF = 1000.;
         matching_index_DTSegment4D_VBF = -1;
-        for(unsigned int a = 0; a<DTSegmentvector.size(); a++)
+        for(unsigned int a = 0; a<DTSegmentVect.size(); a++)
             {
             current_delta_R_DTSegment4D = fabs(reco::deltaR(DTSegment_Global_points[a].eta(),DTSegment_Global_points[a].phi(),VBFPairJetsVect[j].eta(),VBFPairJetsVect[j].phi()));
             if(current_delta_R_DTSegment4D_VBF<0.4 && current_delta_R_DTSegment4D_VBF<delta_R_DTSegment4D_VBF)
@@ -1178,7 +1193,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 matching_index_DTSegment4D_VBF = a;
                 DTVBFMatched[a] = true;
                 //JetsVect[a].addUserInt("original_jet_index",a+1);
-                MatchedDTSegment4DtoVBFVect.push_back(DTSegmentvector[a]);//avoid duplicates!
+                MatchedDTSegment4DtoVBFVect.push_back(DTSegmentVect[a]);//avoid duplicates!
                 }
             }
         if(matching_index_DTSegment4D_VBF>=0){
@@ -1204,15 +1219,15 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //------------------------------------------------------------------------------------------
    
 
-   std::vector<CSCSegment> CSCSegmentvector = theCSCAnalyzer->FillCSCSegmentVector(iEvent);
-   std::vector<GlobalPoint> CSCSegment_Global_points = theCSCAnalyzer->FillGlobalPointCSCSegmentVector(iEvent, iSetup,CSCSegmentvector);
-   for(unsigned int i =0; i< CSCSegmentvector.size();i++) CSCSegments.push_back( CSCSegmentType() );
+   std::vector<CSCSegment> CSCSegmentVect = theCSCAnalyzer->FillCSCSegmentVector(iEvent);
+   std::vector<GlobalPoint> CSCSegment_Global_points = theCSCAnalyzer->FillGlobalPointCSCSegmentVector(iEvent, iSetup,CSCSegmentVect);
+   for(unsigned int i =0; i< CSCSegmentVect.size();i++) CSCSegments.push_back( CSCSegmentType() );
    
     // Match DT Segments to Gen b quarks
 
     // for gen matching, to be filled later
     std::vector<bool> CSCGenMatched;
-    for(unsigned int i = 0; i < CSCSegmentvector.size(); i++) CSCGenMatched.push_back(false);//to be implemented later
+    for(unsigned int i = 0; i < CSCSegmentVect.size(); i++) CSCGenMatched.push_back(false);//to be implemented later
 
     std::vector<CSCSegment> MatchedCSCSegmentVect;
     //Matching the b quarks to AK4 calo jets
@@ -1225,7 +1240,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         delta_R_CSCSegment = 1000.;
         current_delta_R_CSCSegment = 1000.;
         matching_index_CSCSegment = -1;
-        for(unsigned int a = 0; a<CSCSegmentvector.size(); a++)
+        for(unsigned int a = 0; a<CSCSegmentVect.size(); a++)
             {
             current_delta_R_CSCSegment = fabs(reco::deltaR(CSCSegment_Global_points[a].eta(),CSCSegment_Global_points[a].phi(),GenBquarksVect[b].eta(),GenBquarksVect[b].phi()));
             if(current_delta_R_CSCSegment<0.4 && current_delta_R_CSCSegment<delta_R_CSCSegment)
@@ -1235,7 +1250,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 matching_index_CSCSegment = a;
                 CSCGenMatched[a] = true;
                 //JetsVect[a].addUserInt("original_jet_index",a+1);
-                MatchedCSCSegmentVect.push_back(CSCSegmentvector[a]);//avoid duplicates!
+                MatchedCSCSegmentVect.push_back(CSCSegmentVect[a]);//avoid duplicates!
                 }
             }
         if(matching_index_CSCSegment>=0){
@@ -1258,7 +1273,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     // for gen matching, to be filled later
     std::vector<bool> CSCVBFMatched;
-    for(unsigned int i = 0; i < CSCSegmentvector.size(); i++) CSCVBFMatched.push_back(false);//to be implemented later
+    for(unsigned int i = 0; i < CSCSegmentVect.size(); i++) CSCVBFMatched.push_back(false);//to be implemented later
 
     std::vector<CSCSegment> MatchedCSCSegmenttoVBFVect;
     //Matching the b quarks to AK4 calo jets
@@ -1271,7 +1286,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         delta_R_CSCSegment_VBF = 1000.;
         current_delta_R_CSCSegment_VBF = 1000.;
         matching_index_CSCSegment_VBF = -1;
-        for(unsigned int a = 0; a<CSCSegmentvector.size(); a++)
+        for(unsigned int a = 0; a<CSCSegmentVect.size(); a++)
             {
             current_delta_R_CSCSegment = fabs(reco::deltaR(CSCSegment_Global_points[a].eta(),CSCSegment_Global_points[a].phi(),VBFPairJetsVect[j].eta(),VBFPairJetsVect[j].phi()));
             if(current_delta_R_CSCSegment_VBF<0.4 && current_delta_R_CSCSegment_VBF<delta_R_CSCSegment_VBF)
@@ -1281,7 +1296,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                 matching_index_CSCSegment_VBF = a;
                 CSCVBFMatched[a] = true;
                 //JetsVect[a].addUserInt("original_jet_index",a+1);
-                MatchedCSCSegmenttoVBFVect.push_back(CSCSegmentvector[a]);//avoid duplicates!
+                MatchedCSCSegmenttoVBFVect.push_back(CSCSegmentVect[a]);//avoid duplicates!
                 }
             }
         if(matching_index_CSCSegment_VBF>=0){
@@ -1441,16 +1456,18 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    ObjectsFormat::FillCandidateType(VBF, &theVBF, isMC);//wait, to be fixed
 
    for(unsigned int i = 0; i < CHSJetsVect.size(); i++) CHSJets.push_back( JetType() );
-   for(unsigned int i = 0; i < CHSJetsVect.size(); i++){
-     ObjectsFormat::FillJetType(CHSJets[i], &CHSJetsVect[i], isMC);
-   }
+   for(unsigned int i = 0; i < CHSJetsVect.size(); i++) ObjectsFormat::FillJetType(CHSJets[i], &CHSJetsVect[i], isMC);
+
+   for(unsigned int i = 0; i < VBFPairJetsVect.size(); i++) VBFPairJets.push_back( JetType() );
+   for(unsigned int i = 0; i < VBFPairJetsVect.size(); i++) ObjectsFormat::FillJetType(VBFPairJets[i], &VBFPairJetsVect[i], isMC);
+
    for(unsigned int i = 0; i < CaloJetsVect.size(); i++) CaloJets.push_back( CaloJetType() );
-   for(unsigned int i = 0; i < CaloJetsVect.size(); i++){ ObjectsFormat::FillCaloJetType(CaloJets[i], &CaloJetsVect[i], isMC, caloGenMatched[i]);}
+   for(unsigned int i = 0; i < CaloJetsVect.size(); i++) ObjectsFormat::FillCaloJetType(CaloJets[i], &CaloJetsVect[i], isMC, caloGenMatched[i]);
    //DTSegments
-   for(unsigned int i =0; i< DTSegmentvector.size();i++) ObjectsFormat::FillDT4DSegmentType(DTRecSegments4D[i], &DTSegmentvector[i],&DTSegment_Global_points[i]);
+   for(unsigned int i =0; i< DTSegmentVect.size();i++) ObjectsFormat::FillDT4DSegmentType(DTRecSegments4D[i], &DTSegmentVect[i],&DTSegment_Global_points[i]);
 
    //CSCSegments
-   for(unsigned int i =0; i< CSCSegmentvector.size();i++) ObjectsFormat::FillCSCSegmentType(CSCSegments[i], &CSCSegmentvector[i],&CSCSegment_Global_points[i]);
+   for(unsigned int i =0; i< CSCSegmentVect.size();i++) ObjectsFormat::FillCSCSegmentType(CSCSegments[i], &CSCSegmentVect[i],&CSCSegment_Global_points[i]);
 
    //StandAloneMuons
    for(unsigned int i =0; i< StandAloneMuonsVect.size();i++) ObjectsFormat::FillTrackType(StandAloneMuons[i], &StandAloneMuonsVect[i], GenStandAloneMuonsFlag[i]);
@@ -1491,11 +1508,11 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       std::cout << "number of DisplacedStandAloneMuons: " << DisplacedStandAloneMuonsVect.size() << std::endl;
       for(unsigned int i = 0; i < DisplacedStandAloneMuonsVect.size(); i++) std::cout << "  DisplacedStandAloneMuons  [" << i << "]\tpt: " << DisplacedStandAloneMuonsVect[i].pt() << "\teta: " << DisplacedStandAloneMuonsVect[i].eta() << "\tphi: " << DisplacedStandAloneMuonsVect[i].phi() << std::endl;
 
-      std::cout << "number of DT segments:  " << DTSegmentvector.size() << std::endl;
+      std::cout << "number of DT segments:  " << DTSegmentVect.size() << std::endl;
       std::cout << "number of DT global position:  " << DTSegment_Global_points.size() << std::endl;
       for(unsigned int i = 0; i < DTSegment_Global_points.size(); i++) std::cout << "  Global position of DT segment [" << i << "]\teta: " << DTSegment_Global_points[i].eta() << "\tphi: " << DTSegment_Global_points[i].phi() << std::endl;
 
-      std::cout << "number of CSC segments:  " << CSCSegmentvector.size() << std::endl;
+      std::cout << "number of CSC segments:  " << CSCSegmentVect.size() << std::endl;
       std::cout << "number of CSC global position:  " << CSCSegment_Global_points.size() << std::endl;
       for(unsigned int i = 0; i < CSCSegment_Global_points.size(); i++) std::cout << "  Global position of CSC segment [" << i << "]\teta: " << CSCSegment_Global_points[i].eta() << "\tphi: " << CSCSegment_Global_points[i].phi() << std::endl;
       //std::cout << "number of CHS AK8 jets:  " << CHSFatJetsVect.size() << std::endl;
@@ -1511,6 +1528,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    //ManualJets.clear();
    CHSJets.clear();
    CaloJets.clear();
+   VBFPairJets.clear();
 
    DTRecSegments4D.clear();
    CSCSegments.clear();
@@ -1569,6 +1587,12 @@ AODNtuplizer::beginJob()
    tree -> Branch("nCaloJets" , &nCaloJets , "nCaloJets/L");
    tree -> Branch("nMatchedCHSJets" , &nMatchedCHSJets , "nMatchedCHSJets/L");
    tree -> Branch("nMatchedCaloJets" , &nMatchedCaloJets , "nMatchedCaloJets/L");
+   tree -> Branch("nDTSegments", &nDTSegments, "nDTSegments/L");
+   tree -> Branch("nDTSegmentsStation1", &nDTSegmentsStation1, "nDTSegmentsStation1/L");
+   tree -> Branch("nDTSegmentsStation2", &nDTSegmentsStation2, "nDTSegmentsStation2/L");
+   tree -> Branch("nDTSegmentsStation3", &nDTSegmentsStation3, "nDTSegmentsStation3/L");
+   tree -> Branch("nDTSegmentsStation4", &nDTSegmentsStation4, "nDTSegmentsStation4/L");
+   tree -> Branch("nCSCSegments", &nCSCSegments, "nCSCSegments/L");
    tree -> Branch("nMatchedDTsegmentstob", &nMatchedDTsegmentstob, "nMatchedDTsegmentstob/L");
    tree -> Branch("nMatchedCSCsegmentstob", &nMatchedCSCsegmentstob, "nMatchedCSCsegmentstob/L");
    tree -> Branch("nMatchedDTsegmentstoVBF", &nMatchedDTsegmentstoVBF, "nMatchedDTsegmentstoVBF/L");
@@ -1602,6 +1626,7 @@ AODNtuplizer::beginJob()
    //tree -> Branch("RecoMEt", &RecoMEt.pt, RecoObjectsFormat::ListRecoMEtType().c_str());
    tree -> Branch("MEt", &MEt.pt, ObjectsFormat::ListMEtType().c_str());
    tree -> Branch("CHSJets", &CHSJets);
+   tree -> Branch("VBFPairJets", &VBFPairJets);
    tree -> Branch("CaloJets", &CaloJets);
    tree -> Branch("VBFPair", &VBF.pt, ObjectsFormat::ListCandidateType().c_str());//wait!
 
