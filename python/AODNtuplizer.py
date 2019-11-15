@@ -1,10 +1,112 @@
 import FWCore.ParameterSet.Config as cms
 from FWCore.ParameterSet.VarParsing import VarParsing
 options = VarParsing('analysis')
+
+
+## Var parsing, for CRAB
+#options.register(
+#    "runLocal", True,
+#    VarParsing.multiplicity.singleton,
+#    VarParsing.varType.bool,
+#    "Decide if CRAB should overwrite variables"
+#)
+options.register(
+    "runLocal", True,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "Decide if CRAB should overwrite variables"
+)
+
+options.register(
+    "PisData", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isData parser flag"
+)
+options.register(
+    "PisReHLT", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isReHLT parser flag"
+)
+options.register(
+    "PisReReco", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isReReco parser flag"
+)
+options.register(
+    "PisReMiniAod", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isReMiniAod parser flag"
+)
+options.register(
+    "PisPromptReco", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isPromptReco parser flag"
+)
+options.register(
+    "PnoLHEinfo", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "noLHEinfo parser flag"
+)
+options.register(
+    "PisbbH", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isbbH parser flag"
+)
+options.register(
+    "PisSignal", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "isSignal parser flag"
+)
+options.register(
+    "PGT", "",
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.string,
+    "GT parser flag"
+)
+options.register(
+    "PJECstring", "",
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.string,
+    "JECstring parser flag"
+)
+options.register(
+    "PjsonName", "",
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.string,
+    " jsonName parser flag"
+)
+options.register(
+    "PtriggerTag", "",
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.string,
+    "triggerTag parser flag"
+)
+options.register(
+    "PfilterString", "",
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.string,
+    "filterString parser flag"
+)
+options.register(
+    "Pcalo", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "calo parser flag"
+)
+
 options.parseArguments()
 
-
-RunLocal = cms.bool( True )
+## Important: decide if keeping local options register or CRAB options register
+#RunLocalCMS = cms.bool( options.runLocal )
+RunLocal = cms.bool( options.runLocal )
 
 if RunLocal:
    print "Taking configurations from cfg file; not designed for CRAB submission!"
@@ -16,28 +118,29 @@ process.options   = cms.untracked.PSet(
     allowUnscheduled = cms.untracked.bool(True),
 )
 
+## Events to process
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(50) )
+
+## Messagge logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 10
+process.MessageLogger.cerr.FwkReport.reportEvery = 500
 
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(1000) )
+## Input files
+if len(options.inputFiles) == 0:
 
-process.source = cms.Source("PoolSource",
-    # replace 'myfile.root' with the source file you want to use
-    fileNames = cms.untracked.vstring(
-        #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110750/0000/aodsim_1.root',
-        #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110243/0000/aodsim_1.root'
-        '/store/mc/RunIISummer16DR80Premix/ZJetsToNuNu_HT-800To1200_13TeV-madgraph/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/120000/FE57DDB4-DDBA-E611-A344-0025905A6064.root',
-        #'file:/pnfs/desy.de/cms/tier2/store/data/Run2016G/MET/AOD/07Aug17-v1/110000/3C4239F2-E9A0-E711-82F7-02163E014117.root' 
-
-
+    process.source = cms.Source("PoolSource",
+        fileNames = cms.untracked.vstring(
+            #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110750/0000/aodsim_1.root',
+            #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110243/0000/aodsim_1.root'
+            #'/store/mc/RunIISummer16DR80Premix/ZJetsToNuNu_HT-800To1200_13TeV-madgraph/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/120000/FE57DDB4-DDBA-E611-A344-0025905A6064.root',
+            'file:/pnfs/desy.de/cms/tier2/store/data/Run2016G/MET/AOD/07Aug17-v1/110000/3C4239F2-E9A0-E711-82F7-02163E014117.root' 
+        )
     )
-)
 
 if RunLocal:
     isData = ('/store/data/' in process.source.fileNames[0])
-#For crab
-#else:
-#    isData = options.PisData
+else:
+    isData = options.PisData
 
 process.TFileService = cms.Service( "TFileService",
     fileName = cms.string('output.root' if len(options.outputFile)==0 else options.outputFile),
@@ -55,11 +158,10 @@ if RunLocal:
     isReReco          = ('23Sep2016' in process.source.fileNames[0])
     isReMiniAod       = ('03Feb2017' in process.source.fileNames[0])
     isPromptReco      = ('PromptReco' in process.source.fileNames[0])
-
-    noLHEinfo = True if ('WW_TuneCUETP8M1_13TeV-pythia8' or 'WZ_TuneCUETP8M1_13TeV-pythia8' or 'ZZ_TuneCUETP8M1_13TeV-pythia8') in process.source.fileNames[0] else False #check for PythiaLO samples
-    isbbH = True if ('bbHToBB_M-125_4FS_yb2_13TeV_amcatnlo' in process.source.fileNames[0]) else False #bbH has a different label in LHEEventProduct
-    isSignal = True if ('HToSSTobbbb_MH-125' in process.source.fileNames[0]) else False
-    isCalo   = True #HERE for calo analyses!!!
+    noLHEinfo         = True if ('WW_TuneCUETP8M1_13TeV-pythia8' or 'WZ_TuneCUETP8M1_13TeV-pythia8' or 'ZZ_TuneCUETP8M1_13TeV-pythia8') in process.source.fileNames[0] else False #check for PythiaLO samples
+    isbbH             = True if ('bbHToBB_M-125_4FS_yb2_13TeV_amcatnlo' in process.source.fileNames[0]) else False #bbH has a different label in LHEEventProduct
+    isSignal          = True if ('HToSSTobbbb_MH-125' in process.source.fileNames[0]) else False
+    isCalo            = True #HERE for calo analyses!!!
 
 else:
     isData            = options.PisData
@@ -83,7 +185,7 @@ print 'isReReco',isReReco
 print 'isReMiniAod',isReMiniAod
 print 'isPromptReco',isPromptReco
 print 'isSignal', isSignal
-print 'isSignal', isSignal
+
 if isCalo:
     print "\n"
     print "***************************************"
@@ -111,7 +213,7 @@ GT = ''
 if RunLocal:
     if isData:
         if isReMiniAod and any(s in process.source.fileNames[0] for s in theRunH): GT = '80X_dataRun2_Prompt_v16'
-        else: GT = '80X_dataRun2_2016LegacyRepro_v4'#'80X_dataRun2_2016SeptRepro_v7'
+        else: GT = '80X_dataRun2_2016SeptRepro_v7'#'auto:run2_data'#'80X_dataRun2_2016LegacyRepro_v4'#
     elif not(isData):
         GT = '80X_mcRun2_asymptotic_2016_TrancheIV_v8'#Moriond17 GT
 else:
@@ -212,6 +314,8 @@ process.load('PhysicsTools.PatAlgos.slimming.selectedPatTrigger_cfi')
 
 #slimmedMuons
 process.load('PhysicsTools.PatAlgos.producersLayer1.muonProducer_cff')
+process.patMuons.addGenMatch = False if isData else True
+process.patMuons.embedGenMatch = False if isData else True
 process.load('PhysicsTools.PatAlgos.selectionLayer1.muonSelector_cfi')
 process.selectedPatMuons.cut = cms.string("pt > 5 || isPFMuon || (pt > 3 && (isGlobalMuon || isStandAloneMuon || numberOfMatches > 0 || muonID(\'RPCMuLoose\')))")
 process.load('PhysicsTools.PatAlgos.slimming.slimmedMuons_cfi')
@@ -222,12 +326,19 @@ process.load('RecoEgamma.EgammaTools.egammaObjectModificationsInMiniAOD_cff')
 
 #patElectrons
 process.load('PhysicsTools.PatAlgos.producersLayer1.electronProducer_cff')
-
+process.patElectrons.addGenMatch = False if isData else True
+process.patElectrons.embedGenMatch = False if isData else True
 #patPhotons
 process.load('PhysicsTools.PatAlgos.producersLayer1.photonProducer_cff')
+process.patPhotons.addGenMatch = False if isData else True
+process.patPhotons.embedGenMatch = False if isData else True
 
 #slimmedTaus
 process.load('PhysicsTools.PatAlgos.producersLayer1.tauProducer_cff')
+process.patTaus.addGenMatch = False if isData else True
+process.patTaus.addGenJetMatch = False if isData else True
+process.patTaus.embedGenMatch = False if isData else True
+process.patTaus.embedGenJetMatch = False if isData else True
 process.load('PhysicsTools.PatAlgos.selectionLayer1.tauSelector_cfi')
 process.selectedPatTaus.cut = cms.string("pt > 18. && tauID(\'decayModeFindingNewDMs\')> 0.5")
 process.load('PhysicsTools.PatAlgos.slimming.slimmedTaus_cfi')
@@ -474,31 +585,128 @@ if isCalo:
       svSource = cms.InputTag('slimmedSecondaryVertices'),
       btagDiscriminators = list(bTagDiscriminators),#btagging
       btagInfos = bTagInfos,
-      jetCorrections = (chosen_JEC, ['L1FastJet', 'L2Relative', 'L3Absolute'], 'None'),#correct JEC
+      jetCorrections = (chosen_JEC, ['L1FastJet', 'L2Relative', 'L3Absolute', 'L2L3Residual'], 'None'),#correct JEC
       genJetCollection = cms.InputTag('ak4GenJetsNoNu'),
       genParticles = cms.InputTag('prunedGenParticles'),
       algo = 'AK',
       rParam = 0.4
       )
 
+process.patJets.addGenJetMatch = False if isData else True
+process.patJets.addGenPartonMatch = False if isData else True
+process.patJets.embedGenJetMatch = False if isData else True
+process.patJets.embedGenPartonMatch = False if isData else True
+process.patJets.addPartonJetMatch = False if isData else True
+process.patJets.addJetFlavourInfo = False if isData else True
+process.patJets.getJetMCFlavour = False if isData else True
+
 
 #slimmedMETs
 process.load('PhysicsTools.PatAlgos.producersLayer1.metProducer_cff')
 process.patMETs.computeMETSignsificance = cms.bool(True)
 process.patMETs.srcJets = cms.InputTag("patJets")
+process.patMETs.addGenMET = cms.bool(False if isData else True)
 process.load('PhysicsTools.PatAlgos.selectionLayer1.metSelector_cfi')
 
 #Calculating met corrections, uncertainties and slimmed mets
 from PhysicsTools.PatUtils.tools.runMETCorrectionsAndUncertainties import *
-runMetCorAndUncForMiniAODProduction(process,
-                           jetSelection="pt>5 && abs(eta)<9.9",#this is important!
-                           )
+#runMetCorAndUncForMiniAODProduction(process,
+#                                    jetSelection="pt>543 && abs(eta)<9.9",#this is important!
+#                                    )
+
+runMETCorrectionsAndUncertainties = RunMETCorrectionsAndUncertainties()
+##
+metType="PF"
+#jetCollUnskimmed="patJets"
+jetCollUnskimmed="patJets"
+photonColl="selectedPatPhotons"
+electronColl="selectedPatElectrons"
+muonColl="selectedPatMuons"
+tauColl="selectedPatTaus"
+pfCandColl = "particleFlow"
+jetCleaning="LepClean"
+jetSelection="pt>543 && abs(eta)<9.9"
+jecUnFile=""
+jetFlavor="AK4PFchs"
+recoMetFromPFCs=False
+postfix=""
+
+runMETCorrectionsAndUncertainties(process,
+                                  metType=metType,
+                                  correctionLevel=["T0","T1","T2","Smear","Txy"],
+                                  computeUncertainties=False,
+                                  produceIntermediateCorrections=True,
+                                  addToPatDefaultSequence=False,
+                                  jetCollectionUnskimmed=jetCollUnskimmed,
+                                  photonCollection=photonColl,
+                                  electronCollection=electronColl,
+                                  muonCollection=muonColl,
+                                  tauCollection=tauColl,
+                                  pfCandCollection =pfCandColl,
+                                  autoJetCleaning=jetCleaning,
+                                  jecUncertaintyFile=jecUnFile,
+                                  jetSelection=jetSelection,
+                                  jetFlavor=jetFlavor,
+                                  recoMetFromPFCs=recoMetFromPFCs,
+                                  postfix=postfix,
+                                  runOnData = True if isData else False
+                                  )
+
+#MET T1 uncertainties
+runMETCorrectionsAndUncertainties(process,
+                                  metType=metType,
+                                  correctionLevel=["T1"],
+                                  computeUncertainties=True,
+                                  produceIntermediateCorrections=False,
+                                  addToPatDefaultSequence=False,
+                                  jetCollectionUnskimmed=jetCollUnskimmed,
+                                  photonCollection=photonColl,
+                                  electronCollection=electronColl,
+                                  muonCollection=muonColl,
+                                  tauCollection=tauColl,
+                                  pfCandCollection =pfCandColl,
+                                  autoJetCleaning=jetCleaning,
+                                  jecUncertaintyFile=jecUnFile,
+                                  jetSelection=jetSelection,
+                                  jetFlavor=jetFlavor,
+                                  recoMetFromPFCs=recoMetFromPFCs,
+                                  postfix=postfix,
+                                  runOnData = True if isData else False
+                                  )
+
+#MET T1 Smeared JER uncertainties
+runMETCorrectionsAndUncertainties(process,
+                                  metType=metType,
+                                  correctionLevel=["T1","Smear"],
+                                  computeUncertainties=True,
+                                  produceIntermediateCorrections=False,
+                                  addToPatDefaultSequence=False,
+                                  jetCollectionUnskimmed=jetCollUnskimmed,
+                                  photonCollection=photonColl,
+                                  electronCollection=electronColl,
+                                  muonCollection=muonColl,
+                                  tauCollection=tauColl,
+                                  pfCandCollection =pfCandColl,
+                                  autoJetCleaning=jetCleaning,
+                                  jecUncertaintyFile=jecUnFile,
+                                  jetSelection=jetSelection,
+                                  jetFlavor=jetFlavor,
+                                  recoMetFromPFCs=recoMetFromPFCs,
+                                  postfix=postfix,
+                                  runOnData = True if isData else False
+                                  )
+
+#import PhysicsTools.PatAlgos.tools.helpers as configtools
+#postfix=''
+#configtools.removeIfInSequence(process, "selectedPatJetsForMetT1T2Corr", "patPFMetT1T2CorrSequence", postfix )
+process.patSmearedJets.skipGenMatching = cms.bool(True if isData else False)
 
 from PhysicsTools.PatAlgos.producersLayer1.metProducer_cfi import patMETs
 process.patCaloMet = patMETs.clone(
     metSource = cms.InputTag('caloMetM'),
     addMuonCorrections = cms.bool(False),
-    genMETSource = cms.InputTag('genMetTrue')
+    genMETSource = cms.InputTag('genMetTrue'),
+    addGenMET = cms.bool(False if isData else True)
 )
 process.load('PhysicsTools.PatAlgos.slimming.slimmedMETs_cfi')
 
@@ -640,15 +848,15 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         paths = cms.vstring(
 *[
 ### b-like
-'HLT_QuadPFJet_BTagCSV_p016_p11_VBF_Mqq240_v', 'HLT_QuadPFJet_BTagCSV_p016_VBF_Mqq500_v', 'HLT_DoubleJet90_Double30_TripleBTagCSV_p087_v', 'HLT_QuadJet45_TripleBTagCSV_p087_v', 'HLT_DoubleJetsC112_DoubleBTagCSV_p014_DoublePFJetsC112MaxDeta1p6_v', 'HLT_DoubleJetsC112_DoubleBTagCSV_p026_DoublePFJetsC172_v',
+#'HLT_QuadPFJet_BTagCSV_p016_p11_VBF_Mqq240_v', 'HLT_QuadPFJet_BTagCSV_p016_VBF_Mqq500_v', 'HLT_DoubleJet90_Double30_TripleBTagCSV_p087_v', 'HLT_QuadJet45_TripleBTagCSV_p087_v', 'HLT_DoubleJetsC112_DoubleBTagCSV_p014_DoublePFJetsC112MaxDeta1p6_v', 'HLT_DoubleJetsC112_DoubleBTagCSV_p026_DoublePFJetsC172_v',
 ### displaced tracks
-'HLT_VBF_DisplacedJet40_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_DisplacedTrack_2TrackIP2DSig5_v', 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_Tight_DisplacedTrack_v', 'HLT_HT650_DisplacedDijet80_Inclusive_v', 'HLT_HT750_DisplacedDijet80_Inclusive_v',
+#'HLT_VBF_DisplacedJet40_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_DisplacedTrack_2TrackIP2DSig5_v', 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_Tight_DisplacedTrack_v', 'HLT_HT650_DisplacedDijet80_Inclusive_v', 'HLT_HT750_DisplacedDijet80_Inclusive_v',
 ### calo lifetimes
 'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v', 'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v',
 ###
 #'HLT_CaloMHTNoPU90_PFMET90_PFMHT90_IDTight_BTagCSV_p067_v', 'HLT_MET200_v', 'HLT_MET250_v', 'HLT_MET75_IsoTrk50_v', 'HLT_MET90_IsoTrk50_v', 'HLT_MonoCentralPFJet80_PFMETNoMu110_PFMHTNoMu110_IDTight_v', 'HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight_v', 'HLT_PFMET110_PFMHT110_IDTight_v', 'HLT_PFMET120_PFMHT120_IDTight_v', 'HLT_PFMET170_HBHECleaned_v', 'HLT_PFMET300_v', 'HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v', 'HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v',
 ###production for MET
-'HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v'
+'HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v',
 ### All studied triggers:
 #
 ###Control paths for VBF, prescaled
@@ -917,7 +1125,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeGenBquarks = cms.bool(True), #Acceptance cuts a few lines above!
     writeGenLLPs = cms.bool(True),
     writeOnlyTriggerEvents = cms.bool(True),#slims down ntuples a lot
-    writeOnlyisVBFEvents = cms.bool(True),#slims down ntuples a lot
+    writeOnlyisVBFEvents = cms.bool(False),#slims down ntuples a lot
     ## PFCandidates:
     writeAK4JetPFCandidates = cms.bool(False), #Matched to AK4 only!
     writeAK8JetPFCandidates = cms.bool(False), #Matched to AK8 only!
