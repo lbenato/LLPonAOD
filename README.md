@@ -3,9 +3,9 @@
 ## Git instructions
 In your working area, first set up the CMSSW release:
 ```bash
-### CMSSW_8_0_26_patch1 is the release needed for 2016 data analyses
-cmsrel CMSSW_8_0_26_patch1
-cd CMSSW_8_0_26_patch1/src
+### CMSSW_8_0_29 is the release needed for 2016 data analyses
+cmsrel CMSSW_8_0_29
+cd CMSSW_8_0_29/src
 cmsenv
 git cms-init
 ```
