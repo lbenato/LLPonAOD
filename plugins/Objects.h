@@ -958,12 +958,14 @@ CSCSegmentType(): eta(-9.), phi(-9.), time(-9.), layer(-9), ring(-9) , station(-
 struct TrackType {
 TrackType():
     charge(-99), pt(-1.), eta(-9.), phi(-9.),
-      px(-99.), py(-99.), pz(-99.),
+    px(-99.), py(-99.), pz(-99.),
     dxy(-99.), dz(-99.), POCA_x(-99.), POCA_y(-99.), POCA_z(-99.), POCA_phi(-9.),
-    ptError(-1.), etaError(-1.), phiError(-1.), dxyError(-99.), dzError(-99.), theta(-9.), thetaError(-1.),
+    d0(-99.), dsz(-99.), qoverp(-99.), nLoops(-99), numberOfValidHits(-99), numberOfLostHits(-99), validFraction(-99.),
+    ptError(-99.), etaError(-99.), phiError(-99.), dxyError(-99.), dzError(-99.), theta(-9.), thetaError(-1.),
+    d0Error(-99.), dszError(-99.), qoverpError(-99.),
     chi2(-1.), ndof(-1), normalizedChi2(-1.),
     //nHits(-1), nPixelHits(-1), lostInnerHits(-9),
-      recHitsSize(-1), isGenMatched(false) {}
+    recHitsSize(-1), isGenMatched(false) {}
     //hcalFraction(-1.), longLived(-1)
     //innerDetId(-1), innerPosition_x(-9999.), innerPosition_y(-9999.), innerPosition_z(-9999.),
     //innerMomentum_x(-9999.), innerMomentum_y(-9999.), innerMomentum_z(-9999.),
@@ -986,6 +988,14 @@ TrackType():
     float POCA_z;
     float POCA_phi;         // Momentum direction (from tracking-only information)
 
+    float d0;
+    float dsz;
+    float qoverp;
+    int nLoops;
+    int numberOfValidHits;
+    int numberOfLostHits;
+    float validFraction;
+
     // Additional tracking information (for pT > 0.95 GeV)
     float ptError;
     float etaError;
@@ -994,6 +1004,10 @@ TrackType():
     float dzError;
     float theta;
     float thetaError;
+
+    float d0Error;
+    float dszError;
+    float qoverpError;
 
     float chi2;
     int ndof;

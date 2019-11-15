@@ -2014,6 +2014,12 @@ void ObjectsFormat::FillTrackType(TrackType& I, const reco::Track* C, bool gen_f
   I.dxyError        = C->dxyError();
   I.dz              = C->dz();
   I.dzError         = C->dzError();
+  I.d0              = C->d0();
+  I.d0Error         = C->d0Error();
+  I.dsz             = C->dsz();
+  I.dszError        = C->dszError();
+  I.qoverp          = C->qoverp();
+  I.qoverpError     = C->qoverpError();
   //I.nHits           = C->numberOfHits();
   //I.nPixelHits      = C->numberOfPixelHits();
   //I.lostInnerHits   = C->lostInnerHits();
@@ -2040,6 +2046,10 @@ void ObjectsFormat::FillTrackType(TrackType& I, const reco::Track* C, bool gen_f
   I.ndof            = C->ndof();
   I.normalizedChi2  = C->normalizedChi2();
   I.recHitsSize     = C->recHitsSize();
+  I.nLoops          = C->nLoops();
+  I.numberOfValidHits = C->numberOfValidHits();
+  I.numberOfLostHits = C->numberOfLostHits();
+  I.validFraction   = C->validFraction();
   I.isGenMatched    = gen_flag;
 }
 
@@ -2055,6 +2065,12 @@ void ObjectsFormat::ResetTrackType(TrackType& I) {
   I.dxyError        = -99.;
   I.dz              = -99.;
   I.dzError         = -99.;
+  I.d0              = -99.;
+  I.d0Error         = -99.;
+  I.dsz             = -99.;
+  I.dszError        = -99.;
+  I.qoverp          = -99.;
+  I.qoverpError     = -99.;
   //I.nHits           = -1;
   //I.nPixelHits      = -1;
   //I.lostInnerHits   = -9;
@@ -2065,11 +2081,11 @@ void ObjectsFormat::ResetTrackType(TrackType& I) {
   I.POCA_z          = -99.;
   I.POCA_phi        = -9.;
   //I.longLived       = -1;
-  I.ptError         = -1.;
-  I.etaError        = -1.;
-  I.phiError        = -1.;
+  I.ptError         = -99.;
+  I.etaError        = -99.;
+  I.phiError        = -99.;
   I.theta           = -9.;
-  I.thetaError      = -1.;
+  I.thetaError      = -99.;
   //I.innerDetId      = -1;
   //I.innerPosition_x = -9999.;
   //I.innerPosition_y = -9999.;
@@ -2081,7 +2097,11 @@ void ObjectsFormat::ResetTrackType(TrackType& I) {
   I.ndof            = -1;
   I.normalizedChi2  = -1.;
   I.recHitsSize     = -1;
+  I.nLoops          = -99;
+  I.numberOfValidHits = -99;
+  I.numberOfLostHits  = -99;
+  I.validFraction   = -99.;
   I.isGenMatched    = false;
 }
 
-std::string ObjectsFormat::ListTrackType() {return"pt/F:eta/F:phi/F:px/F:py/F:pz/F:dxy/F:dxyError/F:dz/F:dzError/F:charge/I:POCA_x/F:POCA_y/F:POCA_z/F:POCA_phi/I:ptError/F:etaError/F:phiError/F:theta/F:thetaError/F:chi2/F:ndof/F:normalizedChi2/F:recHitsSize/I:isGenMatched/O";}
+std::string ObjectsFormat::ListTrackType() {return"pt/F:eta/F:phi/F:px/F:py/F:pz/F:dxy/F:dxyError/F:dz/F:dzError/F:d0/F:d0Error/F:dsz/F:dszError/F:qoverp/F:qoverpError/F:charge/I:POCA_x/F:POCA_y/F:POCA_z/F:POCA_phi/I:ptError/F:etaError/F:phiError/F:theta/F:thetaError/F:chi2/F:ndof/F:normalizedChi2/F:recHitsSize/I:nLoops/I:numberOfValidHits/I:numberOfLostHits/I:valifFraction/F:isGenMatched/O";}
