@@ -172,10 +172,11 @@ if __name__ == '__main__':
         # Trigger filter
         triggerTag = 'HLT2' if isReHLT else 'HLT'
 
-        if isData:
-            filterString = "RECO"
-        else:
-            filterString = "PAT"
+        filterString = "RECO"
+        #if isData:
+        #    filterString = "RECO"
+        #else:
+        #    filterString = "PAT"
 
         #Prepare inputstrings for pyCfg
         string_runLocal = 'runLocal=False'
