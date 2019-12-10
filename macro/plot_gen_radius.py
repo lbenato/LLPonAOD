@@ -136,6 +136,7 @@ def plot_2D(var,nbins=50,minimum=0,maximum=2000,filename=""):
         hist[s].GetYaxis().SetTitle("GenBquarks[0] "+var+" (cm)")
         hist[s].GetYaxis().SetTitleOffset(1.4)
         hist[s].GetXaxis().SetTitle("GenBquarks[3] "+var+" (cm)")
+        hist[s].SetTitle(samples[s]['label'] if filename=="" else filename)
         hist[s].SetMarkerColor(0)
         hist[s].Draw("colztext")
         v_ecal.Draw("sames")
@@ -147,8 +148,12 @@ def plot_2D(var,nbins=50,minimum=0,maximum=2000,filename=""):
         v_mb1.Draw("sames")
         h_mb1.Draw("sames")
         leg.Draw("sames")
+        c1.Print("macro/2D_gen_b_quark_"+var+"_"+(s if filename=="" else filename)+".png")
+        c1.Print("macro/2D_gen_b_quark_"+var+"_"+(s if filename=="" else filename)+".pdf")
 
         raw_input("Press Enter to continue...")
+        c1.Close()
 
+#plot_2D("radius",nbins=20,minimum=0,maximum=1000,filename="")
 plot_2D("radius2D",nbins=20,minimum=0,maximum=1000,filename="VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000")
-plot_2D("z",nbins=10,minimum=0,maximum=1000,filename="VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000")
+#plot_2D("z",nbins=10,minimum=0,maximum=1000,filename="VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000")
