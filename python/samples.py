@@ -534,6 +534,7 @@ samples = {
     'data_obs' : {
         'order' : 0,
         'files' : ['METRun2016G-07Aug17-v1'],#AOD
+        #'files' : ['METRun2016B-03Feb2017_ver2-v2'],#miniAOD
         'fillcolor' : 0,
         'fillstyle' : 1,
         'linecolor' : 1,
@@ -779,11 +780,11 @@ samples = {
     'ZJetsToNuNuRed' : {
         'files' : [
             'ZJetsToNuNu_HT-100To200_13TeV-madgraph-v1', 
-            'ZJetsToNuNu_HT-200To400_13TeV-madgraph-v1', 
+            #'ZJetsToNuNu_HT-200To400_13TeV-madgraph-v1', 
             #'ZJetsToNuNu_HT-400To600_13TeV-madgraph-v1', 
             #'ZJetsToNuNu_HT-600To800_13TeV-madgraph-v1', 
             #'ZJetsToNuNu_HT-800To1200_13TeV-madgraph-v1', 
-            #'ZJetsToNuNu_HT-1200To2500_13TeV-madgraph-v1', 
+            'ZJetsToNuNu_HT-1200To2500_13TeV-madgraph-v1', 
             #'ZJetsToNuNu_HT-2500ToInf_13TeV-madgraph-v1'
             ],  
         'fillcolor' : 856,
@@ -926,8 +927,9 @@ samples = {
     },
     'VVRed' : {
         'files' : [
-            #'WW_TuneCUETP8M1_13TeV-pythia8-v1',
-            'WZ_TuneCUETP8M1_13TeV-pythia8-v1','ZZ_TuneCUETP8M1_13TeV-pythia8-v1'
+            'WW_TuneCUETP8M1_13TeV-pythia8-v1',
+            #'WZ_TuneCUETP8M1_13TeV-pythia8-v1',
+            'ZZ_TuneCUETP8M1_13TeV-pythia8-v1'
             ],  
         'fillcolor' : 602,
         'fillstyle' : 1001,
@@ -1205,9 +1207,9 @@ samples = {
             ],
         'mass' : 15,
         'ctau' : 100,
-        'fillcolor' : 826,
+        'fillcolor' : 1,#826,
         'fillstyle' : 0,
-        'linecolor' : 826,
+        'linecolor' : 1,#826,
         'linewidth' : 3,
         'linestyle' : 1,
         'label' : "m_{#pi} = 15 GeV, c#tau_{0} = 100 mm",
@@ -1221,9 +1223,9 @@ samples = {
             ],
         'mass' : 15,
         'ctau' : 500,
-        'fillcolor' : 826,
+        'fillcolor' : 2,#826,
         'fillstyle' : 0,
-        'linecolor' : 826,
+        'linecolor' : 2,#826,
         'linewidth' : 3,
         'linestyle' : 1,
         'label' : "m_{#pi} = 15 GeV, c#tau_{0} = 500 mm",
@@ -1238,9 +1240,9 @@ samples = {
         'title' : 'VBFH m15 c #tau 1000',
         'mass' : 15,
         'ctau' : 1000,
-        'fillcolor' : 826,
+        'fillcolor' : 3,#826,
         'fillstyle' : 0,
-        'linecolor' : 826,
+        'linecolor' : 3,#826,
         'linewidth' : 3,
         'linestyle' : 1,
         'label' : "m_{#pi} = 15 GeV, c#tau_{0} = 1000 mm",
@@ -1270,9 +1272,9 @@ samples = {
             ],
         'mass' : 15,
         'ctau' : 5000,
-        'fillcolor' : 826,
+        'fillcolor' : 8,#826,
         'fillstyle' : 0,
-        'linecolor' : 826,
+        'linecolor' : 8,#826,
         'linewidth' : 3,
         'linestyle' : 1,
         'label' : "m_{#pi} = 15 GeV, c#tau_{0} = 5000 mm",
@@ -1287,9 +1289,9 @@ samples = {
         'title' : 'VBFH m15 c #tau 10000',
         'mass' : 15,
         'ctau' : 10000,
-        'fillcolor' : 826,
+        'fillcolor' : 6,#826,
         'fillstyle' : 0,
-        'linecolor' : 826,
+        'linecolor' : 6,#826,
         'linewidth' : 3,
         'linestyle' : 1,
         'label' : "m_{#pi} = 15 GeV, c#tau_{0} = 10000 mm",
