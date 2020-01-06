@@ -17,6 +17,12 @@
 */*~
 *~
 
+#Undesired pdf/png
+*.pdf
+*/*.pdf
+*.png
+*/*.png
+
 #Undesired root files
 *.root
 tmpConfig*
@@ -50,3 +56,6 @@ tmpConfig*
 *.exe
 *.out
 *.app
+
+# Errors
+.__afs*
