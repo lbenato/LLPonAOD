@@ -1,6 +1,15 @@
 #ifndef RECOOBJECTS_H
 #define RECOOBJECTS_H
 
+struct RecoLeptonType {
+RecoLeptonType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.) {}
+
+  float pt;
+  float eta;
+  float phi;
+  float mass;
+};
+
 
 struct RecoJetType {
 RecoJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.) {}

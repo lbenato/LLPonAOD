@@ -24,18 +24,21 @@ class RecoObjectsFormat {
   ~RecoObjectsFormat() {};
 
   static void FillRecoJetType(RecoJetType&, const reco::Jet*, bool);
+  static void FillRecoElectronType(RecoLeptonType&, const reco::GsfElectron*, bool);
   //static void FillCaloJetType(CaloJetType&, const reco::CaloJet*, bool, bool);//new
   static void FillRecoMEtType(RecoMEtType&, const reco::PFMET*, bool);
   //static void FillCandidateType(CandidateType&, reco::CompositeCandidate*, bool);
   //static void FillGenPType(GenPType&, const reco::GenParticle*);
 
   static void ResetRecoJetType(RecoJetType&);
+  static void ResetRecoElectronType(RecoLeptonType&);
   //static void ResetCaloJetType(CaloJetType&);//new
   static void ResetRecoMEtType(RecoMEtType&);
   //static void ResetCandidateType(CandidateType&);
   //static void ResetGenPType(GenPType&);
 
   static std::string ListRecoJetType();
+  static std::string ListRecoElectronType();
   //static std::string ListCaloJetType();
   static std::string ListRecoMEtType();
   //static std::string ListCandidateType();

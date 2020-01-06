@@ -39,6 +39,27 @@ void RecoObjectsFormat::ResetRecoMEtType(RecoMEtType& I) {
 
 std::string RecoObjectsFormat::ListRecoMEtType() {return "pt/F:eta/F:phi/F";}
 
+//*******************//                                                         
+//  RecoElectrons    //                                                         
+//*******************//                                                         
+
+void RecoObjectsFormat::FillRecoElectronType(RecoLeptonType& I, const reco::GsfElectron* R, bool isMC) {
+  if(!R) return;
+  I.pt          = R->pt();
+  I.eta         = R->eta();
+  I.phi         = R->phi();
+  I.mass        = R->mass();
+}
+
+void RecoObjectsFormat::ResetRecoElectronType(RecoLeptonType& I) {
+  I.pt          = -1.;
+  I.eta         = -9.;
+  I.phi         = -9.;
+  I.mass        = -1.;
+}
+
+std::string RecoObjectsFormat::ListRecoElectronType() {return "pt/F:eta/F:phi/F:mass/F";}
+
 
 //*******************//
 //    Calo Jets      //
