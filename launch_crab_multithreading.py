@@ -4,6 +4,8 @@ from CRABClient.UserUtilities import config, getUsernameFromSiteDB
 import sys
 config = config()
 
+config.User.voGroup='dcms'
+
 config.General.workArea = 'crab_projects_LLP'
 config.General.transferOutputs = True
 config.General.transferLogs = True
@@ -17,17 +19,18 @@ config.General.requestName = 'test'
 
 config.Data.inputDataset =  '/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/lbenato-RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM-b1a4edca9adfa7a2e4059536bf605cd7/USER'
 config.Data.inputDBS = 'global'
-config.Data.splitting = 'EventAwareLumiBased'
+#config.Data.splitting = 'EventAwareLumiBased'
+config.Data.splitting = 'Automatic'
 
-config.Data.unitsPerJob = 10000
+#config.Data.unitsPerJob = 10000
 config.Data.outLFNDirBase = '/store/user/lbenato/choose_a_folder_name'
 config.Data.publication = False
 
 config.Site.storageSite = 'T2_DE_DESY'
-config.Site.blacklist   = ['T2_FR_IPHC']
+#config.Site.blacklist   = ['T2_FR_IPHC']
             
 #enable multi-threading
-config.JobType.maxMemoryMB = 15900 #more memory
+config.JobType.maxMemoryMB = 9000#15900 #more memory
 config.JobType.numCores = 8
 
 if __name__ == '__main__':
@@ -63,6 +66,7 @@ if __name__ == '__main__':
     parser.add_option("-l", "--lists", action="store", type="string", dest="lists", default="")
     parser.add_option("-g", "--groupofsamples", action="store", type="string", dest="groupofsamples", default="")
     parser.add_option("-c", "--calo", action="store_true", dest="calo", default=False)
+    parser.add_option("-m", "--mode", action="store", type="string", dest="mode", default="VBF")
     (options, args) = parser.parse_args()
 
 
@@ -73,6 +77,16 @@ if __name__ == '__main__':
     else:
        isCalo=False
 
+    if options.mode=="VBF":
+        isVBF = True
+        isggH = False
+    elif options.mode=="ggH":
+        isVBF = False
+        isggH = True
+    else:
+        print "Wrong production mode! Aborting...."
+        exit()
+
     folder = ''
     pset = ''
     workarea = ''
@@ -80,10 +94,30 @@ if __name__ == '__main__':
         from Analyzer.LLPonAOD.crab_requests_lists_AOD_calo import * #This list is fine for us!
         #crabConfig = 'crabConfig.py'
         pset = "AODNtuplizer_multithreading.py"
-        folder = "v0_calo_AOD_8cores" #CHANGE here your crab folder name
+        folder = "v0_calo_AOD_8cores_22Nov" #CHANGE here your crab folder name
+        outLFNDirBase = "/store/user/lbenato/"+folder #CHANGE here according to your username!
+        workarea = "/nfs/dust/cms/user/lbenato/" + folder #CHANGE here according to your username!
+        isCalo = True
+        isVBF = True
+        isggH = False
+    elif  options.lists == "v0_calo_ZH_AOD":
+        from Analyzer.LLPonAOD.crab_requests_lists_AOD_calo import * #This list is fine for us!
+        #crabConfig = 'crabConfig.py'
+        pset = "ZHNtuplizer.py"
+        folder = "v0_calo_ZH_AOD_11Dec" #CHANGE here your crab folder name
         outLFNDirBase = "/store/user/lbenato/"+folder #CHANGE here according to your username!
         workarea = "/nfs/dust/cms/user/lbenato/" + folder #CHANGE here according to your username!
         isCalo=True
+    if  options.lists == "v0_calo_ggH_AOD":
+        from Analyzer.LLPonAOD.crab_requests_lists_AOD_calo import * #This list is fine for us!
+        #crabConfig = 'crabConfig.py'
+        pset = "AODNtuplizer_multithreading.py"
+        folder = "v0_calo_ggH_AOD_27Dec" #CHANGE here your crab folder name
+        outLFNDirBase = "/store/user/lbenato/"+folder #CHANGE here according to your username!
+        workarea = "/nfs/dust/cms/user/lbenato/" + folder #CHANGE here according to your username!
+        isCalo = True
+        isVBF = False
+        isggH = True
     else:
         print "No list indicated, aborting!"
         exit()
@@ -125,6 +159,20 @@ if __name__ == '__main__':
         print "***************************************"
         print "***************************************"
         print "***************************************"
+        print "\n"
+
+    if isVBF:
+        print "\n"
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "Performing analysis for VBF!"
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "\n"
+
+    if isggH:
+        print "\n"
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        print "Performing analysis for ggH!"
+        print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
         print "\n"
     
     for a, j in enumerate(selected_requests):
@@ -197,6 +245,8 @@ if __name__ == '__main__':
         string_triggerTag = 'PtriggerTag='+str(triggerTag)
         string_filterString = 'PfilterString='+str(filterString)
         string_calo = 'Pcalo=True' if isCalo else 'Pcalo=False'
+        string_VBF = 'PVBF=True' if isVBF else 'PVBF=False'
+        string_ggH = 'PggH=True' if isggH else 'PggH=False'
 
 
         # submission of the python config
@@ -219,10 +269,10 @@ if __name__ == '__main__':
             config.General.workArea= workarea
             if isData:
                 config.Data.lumiMask = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'
-                #config.Data.splitting = 'Automatic'
-                config.Data.unitsPerJob = 100000
+                config.Data.splitting = 'Automatic'
+                #config.Data.unitsPerJob = 100000
             #config.JobType.pyCfgParams = ['runLocal=False']
-            config.JobType.pyCfgParams = [string_runLocal, string_isData, string_isREHLT, string_isReReco, string_isReMiniAod, string_isPromptReco,string_noLHEinfo, string_isbbH, string_isSignal, string_GT, string_JECstring, string_jsonName, string_triggerTag, string_filterString, string_calo]
+            config.JobType.pyCfgParams = [string_runLocal, string_isData, string_isREHLT, string_isReReco, string_isReMiniAod, string_isPromptReco,string_noLHEinfo, string_isbbH, string_isSignal, string_GT, string_JECstring, string_jsonName, string_triggerTag, string_filterString, string_calo, string_VBF, string_ggH]
             print config
             submit(config)
 
@@ -246,6 +296,9 @@ if __name__ == '__main__':
             if "VBFH_HToSS" in j:
                 #automatic implementation of the choice bewteen inputDBS global/phys03
                 config.Data.inputDBS = "phys03"
+            elif "GluGluH_HToSS" in j:
+                #automatic implementation of the choice bewteen inputDBS global/phys03
+                config.Data.inputDBS = "phys03"
             else:
                 config.Data.inputDBS = "global"
 
@@ -258,9 +311,9 @@ if __name__ == '__main__':
             config.General.workArea= workarea
             if isData:
                 config.Data.lumiMask = 'https://cms-service-dqm.web.cern.ch/cms-service-dqm/CAF/certification/Collisions16/13TeV/ReReco/Final/Cert_271036-284044_13TeV_23Sep2016ReReco_Collisions16_JSON.txt'
-                #config.Data.splitting = 'Automatic'
-                config.Data.unitsPerJob = 100000
-            config.JobType.pyCfgParams = [string_runLocal, string_isData, string_isREHLT, string_isReReco, string_isReMiniAod, string_isPromptReco,string_noLHEinfo, string_isbbH, string_isSignal, string_GT, string_JECstring, string_jsonName, string_triggerTag, string_filterString, string_calo]
+                config.Data.splitting = 'Automatic'
+                #config.Data.unitsPerJob = 100000
+            config.JobType.pyCfgParams = [string_runLocal, string_isData, string_isREHLT, string_isReReco, string_isReMiniAod, string_isPromptReco,string_noLHEinfo, string_isbbH, string_isSignal, string_GT, string_JECstring, string_jsonName, string_triggerTag, string_filterString, string_calo, string_VBF, string_ggH]
             print config
         else:
             print "Invalid crab action. Please type: -a submit/status/resubmit/getoutput/kill"

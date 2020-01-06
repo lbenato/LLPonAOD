@@ -53,7 +53,7 @@ var_template = {
     },
     "nPFCandidatesTrack": {
       "title" : "number of charged particle flow candidates",
-      "nbins" : 100,
+      "nbins" : 100-50,
       "min" : -0.5,
       "max" : 1999.5,
       "log" : True,
@@ -110,9 +110,16 @@ var_template = {
       "max" : 2000,
       "log" : True,
     },
+    "ggHJetMetDPhi": {
+      "title" : "#Delta #varphi (ggH jet, MET)",
+      "nbins" : 32,#10,
+      "min" : 0,
+      "max" : 3.14,
+      "log" : True,
+    },
     "MinJetMetDPhi": {
       "title" : "MinJetMetDPhi",
-      "nbins" : 64,#10,
+      "nbins" : 32,#10,
       "min" : 0,
       "max" : 3.14,
       "log" : True,
@@ -157,7 +164,7 @@ var_template = {
     },
     "CHSJets.CHSJets[[N]].CSV": {
       "title" : "jet [[N]] CSV",
-      "nbins" : 10,
+      "nbins" : 25,
       "min" : 0,
       "max" : 1,
       "log" : True,
@@ -229,9 +236,9 @@ var_template = {
     "CHSJets.CHSJets[[N]].nTrackConstituents": {
       "title" : "jet [[N]] number of jet constituents with tracks",
       #"title" : "Leading jet: n. of constituents with tracks",
-      "nbins" : 50,
+      "nbins" : 50-20,
       "min" : -0.5,
-      "max" : 49.5+50,
+      "max" : 49.5-20,#+50,
       "log" : True,
     },
     "(CHSJets.CHSJets[[N]].nTrackConstituents)/(CHSJets.CHSJets[[N]].nConstituents)": {
@@ -479,11 +486,11 @@ var_template = {
       "log" : True,
     },
     "CHSJets.CHSJets[[N]].nTracks3PixelHits": {
-      #"title" : "jet [[N]] number of tracks with 3 pixel hits",
-      "title" : "Leading jet: n. of tracks with 3 pixel hits",
-      "nbins" : 40+10,
+      "title" : "jet [[N]] number of tracks with 3 pixel hits",
+      #"title" : "Leading jet: n. of tracks with 3 pixel hits",
+      "nbins" : 40-10,
       "min" : -0.5,
-      "max" : 39.5+10,
+      "max" : 39.5-10,
       "log" : True,
     },
     "CHSJets.CHSJets[[N]].nTracks4PixelHits": {
@@ -495,16 +502,16 @@ var_template = {
     },
     "CHSJets.CHSJets[[N]].nTracks5PixelHits": {
       "title" : "jet [[N]] number of tracks with 5 pixel hits",
-      "nbins" : 40,
+      "nbins" : 10,
       "min" : -0.5,
-      "max" : 39.5,
+      "max" : 9.5,
       "log" : True,
     },
     "CHSJets.CHSJets[[N]].nTracks6PixelHits": {
       "title" : "jet [[N]] number of tracks with 6 pixel hits",
-      "nbins" : 40,
+      "nbins" : 10,
       "min" : -0.5,
-      "max" : 39.5,
+      "max" : 9.5,
       "log" : True,
     },
     "CHSJets.CHSJets[[N]].nTracksLarger5PixelHits": {
@@ -570,6 +577,15 @@ var_template = {
       "nbins" : 40,
       "min" : 0.,
       "max" : 1.,
+      "log" : True,
+    },
+
+    #ggH jet
+    "ggHJet[[N]].pt": {
+      "title" : "ggh jet p_{T} (GeV)",
+      "nbins" : 40,#40
+      "min" : 0,
+      "max" : 400,
       "log" : True,
     },
 
@@ -722,9 +738,9 @@ var_template = {
     },
     "CHSJets.CHSJets[[N]].nSelectedTracks": {
         "title" : "Number of selected tracks per jet [[N]]",
-        "nbins" : 51,
+        "nbins" : 20,
         "min" : 0,
-        "max" : 50,
+        "max" : 20,
         "log" : False,
     },
     "CHSJets.CHSJets[[N]].dRSVJet": {
@@ -887,8 +903,8 @@ var_template = {
     "Z.pt": {
       "title" : "Z p_{T} (GeV)",
       "nbins" : 50,
-      "min" : 0,
-      "max" : 1000,
+      "min" : 50,
+      "max" : 550,
       "log" : True,
     },
 
@@ -1271,9 +1287,9 @@ var_template = {
     "FatJets.FatJets[[N]].nTracks3PixelHits": {
       "title" : "AK8 jet [[N]] number of tracks with 3 pixel hits",
       #"title" : "Leading jet: n. of tracks with 3 pixel hits",
-      "nbins" : 40+10,
+      "nbins" : 40-10,
       "min" : -0.5,
-      "max" : 39.5+10,
+      "max" : 39.5-10,
       "log" : True,
     },
     "FatJets.FatJets[[N]].nTracks4PixelHits": {
@@ -1371,6 +1387,13 @@ var_template = {
     "@CSCSegments.size()": {
       "title" : "number of CSC segments",
       "nbins" : 100,
+      "min" : -0.5,
+      "max" : 99.5,
+      "log" : True,
+    },
+    "nCSCSegments": {
+      "title" : "number of CSC segments",
+      "nbins" : 25,
       "min" : -0.5,
       "max" : 99.5,
       "log" : True,

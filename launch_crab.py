@@ -20,7 +20,7 @@ config.Data.inputDBS = 'global'
 config.Data.splitting = 'EventAwareLumiBased'
 
 config.Data.unitsPerJob = 10000
-config.Data.outLFNDirBase = '/store/user/lbenato/choose_a_folder_name'
+config.Data.outLFNDirBase = '/store/user/user_name/choose_a_folder_name'
 config.Data.publication = False
 
 config.Site.storageSite = 'T2_DE_DESY'

@@ -41,3 +41,17 @@ selection["METHTNoVBF"] = selection["PFMETNoMuTrigger"] + " && HT>200 && MEt.pt>
 selection["METHTv0"] = selection["PFMETNoMuTrigger"] + " && HT>200 && MEt.pt>200 && Jets.pt>15"
 
 selection["METHTv0miniAOD"] = selection["PFMETNoMuTrigger"] + " && HT>200 && MEt.pt>200 && (isMC?CHSJets.pt>15:1)"
+
+selection["isZ"] = " (isZtoEE || isZtoMM) && Z.mass>70 && Z.mass<110 "
+selection["isZtoEE"] = " (isZtoEE) && Z.mass>70 && Z.mass<110 && Z.pt>50"
+selection["isZtoMM"] = " (isZtoMM) && Z.mass>70 && Z.mass<110 && Z.pt>50"
+selection["triggerEle"] = "HLT_Ele27_WPTight_Gsf_v"
+selection["triggerMu"] = "HLT_IsoMu24_v"
+
+selection["ZHtoEE"] = selection["isZtoEE"] + " && " + selection["triggerEle"]
+selection["ZHtoMM"] = selection["isZtoMM"] + " && " + selection["triggerMu"]
+
+selection["ZHtoMMSR"] = selection["isZtoMM"] + " && " + selection["triggerMu"] + " && MEt.pt>120 && MEt.sign>30"
+selection["BoostZHtoMMSR"] = selection["isZtoMM"] + " && " + selection["triggerMu"] + " && MEt.pt>120 && MEt.sign>30 && Z.pt>100"
+
+selection["METggH"] = selection["PFMETNoMuTrigger"] + " && HT>100 && MEt.pt>120 && isggH " + " && " + selection["VetoLeptons"]
