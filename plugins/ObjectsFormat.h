@@ -30,7 +30,7 @@ class ObjectsFormat {
         static void FillPhotonType(PhotonType&, const pat::Photon*, bool);
         static void FillTauType(TauType&, const pat::Tau*, bool);
         static void FillJetType(JetType&, const pat::Jet*, bool);
-        static void FillCaloJetType(CaloJetType&, const reco::CaloJet*, bool, bool);//new
+        static void FillCaloJetType(CaloJetType&, const reco::CaloJet*, bool, bool, float, float);//new
         static void FillFatJetType(FatJetType&, const pat::Jet*, std::string, bool);
         static void FillCustomFatJetType(CustomFatJetType&, const pat::Jet*, std::string, bool);
         static void FillMEtType(MEtType&, const pat::MET*, bool);

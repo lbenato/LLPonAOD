@@ -336,6 +336,10 @@ void ObjectsFormat::FillJetType(JetType& I, const pat::Jet* R, bool isMC) {
     I.isCSVL      = R->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")>0.5426 ? true : false;
     I.isCSVM      = R->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")>0.8484 ? true : false;
     I.isCSVT      = R->bDiscriminator("pfCombinedInclusiveSecondaryVertexV2BJetTags")>0.9535 ? true : false;
+    //I.PUId        = R->hasUserInt("pileupJetIdLolli:fullId") ? R->userInt("pileupJetIdLolli:fullId") : -1;
+    //I.PUDiscriminant = R->hasUserFloat("pileupJetIdLolli:fullDiscriminant") ? R->userFloat("pileupJetIdLolli:fullDiscriminant") : -2.;
+    I.PUId        = R->hasUserInt("pileupJetId:fullId") ? R->userInt("pileupJetId:fullId") : -1;
+    I.PUDiscriminant = R->hasUserFloat("pileupJetId:fullDiscriminant") ? R->userFloat("pileupJetId:fullDiscriminant") : -2.;
     //I.isMatched   = false;
     //I.dR_q1       = R->hasUserFloat("dR_q1") ? R->userFloat("dR_q1") : 1000;
     //I.dR_q2       = R->hasUserFloat("dR_q2") ? R->userFloat("dR_q2") : 1000;
@@ -352,12 +356,16 @@ void ObjectsFormat::FillJetType(JetType& I, const pat::Jet* R, bool isMC) {
     //I.original_jet_index     = R->hasUserInt("original_jet_index") ? R->userInt("original_jet_index") : -1;
     I.isGenMatched = R->hasUserInt("isGenMatched") ? R->userInt("isGenMatched") : 0;
     I.isVBFGenMatched = R->hasUserInt("isVBFGenMatched") ? R->userInt("isVBFGenMatched") : 0;
+    I.genbRadius2D    = R->hasUserFloat("genbRadius2D") ? R->userFloat("genbRadius2D") : -1000;
+    I.genbEta         = R->hasUserFloat("genbEta") ? R->userFloat("genbEta") : -999;
     I.alphaMax    = R->hasUserFloat("alphaMax") ? R->userFloat("alphaMax") : -1000;
     I.sigIP2DMedian = R->hasUserFloat("sigIP2DMedian") ? R->userFloat("sigIP2DMedian") : -1000;
     I.theta2DMedian = R->hasUserFloat("theta2DMedian") ? R->userFloat("theta2DMedian") : -1000;
     I.POCA_theta2DMedian = R->hasUserFloat("POCA_theta2DMedian") ? R->userFloat("POCA_theta2DMedian") : -1000;
     I.nPixelHitsMedian = R->hasUserFloat("nPixelHitsMedian") ? R->userFloat("nPixelHitsMedian") : -1.0;
     I.nHitsMedian = R->hasUserFloat("nHitsMedian") ? R->userFloat("nHitsMedian") : -1.0;
+    I.dxyMedian   = R->hasUserFloat("dxyMedian") ? R->userFloat("dxyMedian") : -9999.;
+    I.dzMedian    = R->hasUserFloat("dzMedian") ? R->userFloat("dzMedian") : -9999.;
     I.hcalE       = R->chargedHadronEnergy() + R->neutralHadronEnergy();
     I.ecalE       = R->chargedEmEnergy() + R->neutralEmEnergy();
     I.FracCal     = (R->chargedEmEnergy() + R->neutralEmEnergy())/(R->chargedHadronEnergy() + R->neutralHadronEnergy());
@@ -525,6 +533,8 @@ void ObjectsFormat::ResetJetType(JetType& I) {
     I.isCSVL      = false;
     I.isCSVM      = false;
     I.isCSVT      = false;
+    I.PUId         = -1;
+    I.PUDiscriminant = -2.;
     //I.isMatched   = false;
     //I.dR_q1       = 1000.;
     //I.dR_q2       = 1000.;
@@ -541,12 +551,16 @@ void ObjectsFormat::ResetJetType(JetType& I) {
     //I.original_jet_index = -1;
     I.isGenMatched = 0;
     I.isVBFGenMatched = 0;
+    I.genbRadius2D = -1000.;
+    I.genbEta      = -999.;
     I.alphaMax = -100.;
     I.sigIP2DMedian = -100.;
     I.theta2DMedian = -100.;
     I.POCA_theta2DMedian = -100.;
     I.nPixelHitsMedian = -1.0;
     I.nHitsMedian = -1.0;
+    I.dxyMedian   = -1.;
+    I.dzMedian    = -1.;
     I.hcalE       = -100.;
     I.ecalE       = -100.;
     I.FracCal     = -100.;
@@ -606,7 +620,7 @@ void ObjectsFormat::ResetJetType(JetType& I) {
     I.nMatchedGenBquarks = -1;
 }
 
-std::string ObjectsFormat::ListJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:energyRaw/F:ptRaw/F:ptUnc/F:CSV/F:CMVA/F:cHadE/F:nHadE/F:eleE/F:photonE/F:muE/F:nEmE/F:cEmE/F:cmuE/F:cHadEFrac/F:nHadEFrac/F:eleEFrac/F:photonEFrac/F:muEFrac/F:nEmEFrac/F:cEmEFrac/F:cmuEFrac/F:cHadMulti/F:nHadMulti/F:eleMulti/F:photonMulti/F:muMulti/F:cMulti/F:nMulti/F:npr/F:cHadMultiFrac/F:nHadMultiFrac/F:eleMultiFrac/F:photonMultiFrac/F:muMultiFrac/F:cMultiFrac/F:nMultiFrac/F:ptGenJ/F:etaGenJ/F:phiGenJ/F:massGenJ/F:ptGen/F:etaGen/F:phiGen/F:massGen/F:pdgIdGen/I:partonFlavour/I:hadronFlavour/I:mother/I:isLoose/O:isMedium/O:isTight/O:isTightLepVeto/O:isCSVL/O:isCSVM/O:isCSVT/O:matchBquark/I:matchLL/I:isGenMatched/I:isVBFGenMatched/I:alphaMax/F:sigIP2DMedian/F:theta2DMedian/F:POCA_theta2DMedian/F:nPixelHitsMedian/F:nHitsMedian/F:hcalE/F:ecalE/F:FracCal/F:flightDist2d/F:flightDist2dError/F:flightDist3d/F:flightDist3dError/F:nSV/I:nSVCand/I:nVertexTracks/I:nSelectedTracks/I:dRSVJet/F:SV_x/F:SV_y/F:SV_z/F:SV_dx/F:SV_dy/F:SV_dz/F:nTracksSV/I:SV_mass/F:isCaloTag/I:ptJESUp/F:ptJESDown/F:ptJERUp/F:ptJERDown/F:TriggerMatched_VBFJet/I:TriggerMatched_DisplacedJet/I:TriggerMatched_TripleJet50/I:nSubJets/I:tau1/F:tau2/F:tau3/F:tau21/F:tau31/F:tau23/F:tau1_neutral/F:tau2_neutral/F:tau21_neutral/F:tau1_charged/F:tau2_charged/F:tau21_charged/F:nConstituents/I:nTrackConstituents/I:nTracks0PixelHits/I:nTracks1PixelHit/I:nTracks2PixelHits/I:nTracks3PixelHits/I:nTracks4PixelHits/I:nTracks5PixelHits/I:nTracksAtLeast6PixelHits/I:nTracksValidHitInBPix1/I:nTracks0LostInnerHits/I:nTracks1LostInnerHit/I:nTracksAtLeast2LostInnerHits/I:nMatchedGenBquarks/I";}
+std::string ObjectsFormat::ListJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:energyRaw/F:ptRaw/F:ptUnc/F:CSV/F:CMVA/F:cHadE/F:nHadE/F:eleE/F:photonE/F:muE/F:nEmE/F:cEmE/F:cmuE/F:cHadEFrac/F:nHadEFrac/F:eleEFrac/F:photonEFrac/F:muEFrac/F:nEmEFrac/F:cEmEFrac/F:cmuEFrac/F:cHadMulti/F:nHadMulti/F:eleMulti/F:photonMulti/F:muMulti/F:cMulti/F:nMulti/F:npr/F:cHadMultiFrac/F:nHadMultiFrac/F:eleMultiFrac/F:photonMultiFrac/F:muMultiFrac/F:cMultiFrac/F:nMultiFrac/F:ptGenJ/F:etaGenJ/F:phiGenJ/F:massGenJ/F:ptGen/F:etaGen/F:phiGen/F:massGen/F:pdgIdGen/I:partonFlavour/I:hadronFlavour/I:mother/I:isLoose/O:isMedium/O:isTight/O:isTightLepVeto/O:isCSVL/O:isCSVM/O:isCSVT/O:PUId/I/PUDiscriminant/F:matchBquark/I:matchLL/I:isGenMatched/I:isVBFGenMatched/I:genbRadius2D/F:genbEta/F:alphaMax/F:sigIP2DMedian/F:theta2DMedian/F:POCA_theta2DMedian/F:nPixelHitsMedian/F:nHitsMedian/F:dxyMedian/F:dzMedian/F:hcalE/F:ecalE/F:FracCal/F:flightDist2d/F:flightDist2dError/F:flightDist3d/F:flightDist3dError/F:nSV/I:nSVCand/I:nVertexTracks/I:nSelectedTracks/I:dRSVJet/F:SV_x/F:SV_y/F:SV_z/F:SV_dx/F:SV_dy/F:SV_dz/F:nTracksSV/I:SV_mass/F:isCaloTag/I:ptJESUp/F:ptJESDown/F:ptJERUp/F:ptJERDown/F:TriggerMatched_VBFJet/I:TriggerMatched_DisplacedJet/I:TriggerMatched_TripleJet50/I:nSubJets/I:tau1/F:tau2/F:tau3/F:tau21/F:tau31/F:tau23/F:tau1_neutral/F:tau2_neutral/F:tau21_neutral/F:tau1_charged/F:tau2_charged/F:tau21_charged/F:nConstituents/I:nTrackConstituents/I:nTracks0PixelHits/I:nTracks1PixelHit/I:nTracks2PixelHits/I:nTracks3PixelHits/I:nTracks4PixelHits/I:nTracks5PixelHits/I:nTracksAtLeast6PixelHits/I:nTracksValidHitInBPix1/I:nTracks0LostInnerHits/I:nTracks1LostInnerHit/I:nTracksAtLeast2LostInnerHits/I:nMatchedGenBquarks/I";}
 
 //"pt/F:eta/F:phi/F:mass/F:energy/F:ptRaw/F:ptUnc/F:dPhi_met/F:dPhi_Jet1/F:puId/F:CSV/F:CSVR/F:CSVRUp/F:CSVRDown/F:CMVA/F:CMVAR/F:CMVARUp/F:CMVARDown/F:QGLikelihood/F:cHadE/F:nHadE/F:cHadEFrac/F:nHadEFrac/F:nEmE/F:nEmEFrac/F:cEmE/F:cEmEFrac/F:cmuE/F:cmuEFrac/F:muE/F:muEFrac/F:eleE/F:eleEFrac/F:eleMulti/F:photonE/F:photonEFrac/F:photonMulti/F:cHadMulti/F:nHadMulti/F:npr/F:cMulti/F:nMulti/F:emEFrac/F:emEinEB/F:emEinEE/F:emEinHF/F:EFracHad/F:hadEinHB/F:hadEinHE/F:hadEinHF/F:hadEinHO/F:ptGenJ/F:etaGenJ/F:phiGenJ/F:massGenJ/F:ptGen/F:etaGen/F:phiGen/F:massGen/F:pdgIdGen/I:partonFlavour/I:hadronFlavour/I:mother/I:isLoose/O:isMedium/O:isTight/O:isTightLepVeto/O:isCSVL/O:isCSVM/O:isCSVT/O:isMatched/O:dR_q1/F:dR_q2/F:dR_q3/F:dR_q4/F:m_q1/O:m_q2/O:m_q3/O:m_q4/O:dR_pi1/F:dR_pi2/F:matchBquark/I:matchLL/I:original_jet_index/I:isGenMatched/I:alphaMax/F:sigIP2DMedian/F:theta2DMedian/F:hcalE/F:ecalE/F:FracCal/F:flightDist2d/F:flightDist2dSig/F:flightDist3d/F:flightDist3dSig/F:nSV/I:nSVCand/I:nVertexTracks/I:nSelectedTracks/I:dRSVJet/F:SV_x/F:SV_y/F:SV_z/F:SV_dx/F:SV_dy/F:SV_dz/F:nTracksSV/I:SV_mass/F:indexSV/I:isCaloTag/I:VBF_DisplacedJet40_VTightID_Hadronic_match/I:VBF_DisplacedJet40_VVTightID_Hadronic_match/I:ptJESUp/F:ptJESDown/F:ptJERUp/F:ptJERDown/F:nConstituents/I:nTrackConstituents/I:TriggerMatched_VBFJet/I:TriggerMatched_DisplacedJet/I";}
 ////std::string ObjectsFormat::ListJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:ptRaw/F:ptUnc/F:dPhi_met/F:dPhi_Jet1/F:puId/F:CSV/F:CSVR/F:CSVRUp/F:CSVRDown/F:CMVA/F:CMVAR/F:CMVARUp/F:CMVARDown/F:QGLikelihood/F:chf/F:nhf/F:phf/F:elf/F:muf/F:ptGenJ/F:etaGenJ/F:phiGenJ/F:massGenJ/F:ptGen/F:etaGen/F:phiGen/F:massGen/F:pdgIdGen/I:ptLhe/F:etaLhe/F:phiLhe/I:chm/I:npr/I:cm/I:nm/I:partonFlavour/I:hadronFlavour/I:mother/I:isLoose/O:isMedium/O:isTight/O:isTightLepVeto/O:isCSVL/O:isCSVM/O:isCSVT/O:isMatched/O:dR_q1/F:dR_q2/F:dR_q3/F:dR_q4/F:m_q1/O:m_q2/O:m_q3/O:m_q4/O:dR_pi1/F:dR_pi2/F:matchBquark/I:matchLL/I:original_jet_index/I:isGenMatched/I:isMatchedToMatchedCHSJet/I";}
@@ -1498,6 +1512,7 @@ void ObjectsFormat::FillGenPType(GenPType& I, const reco::GenParticle* R) {
     I.pdgId       = R->pdgId();
     I.status      = R->status();
     I.radius      = R->mother()? sqrt(pow(R->vx() - R->mother()->vx(),2) + pow(R->vy() - R->mother()->vy(),2) + pow(R->vz() - R->mother()->vz(),2)) : -1000.;
+    I.radius2D    = R->mother()? sqrt(pow(R->vx() - R->mother()->vx(),2) + pow(R->vy() - R->mother()->vy(),2)) : -1000.;
     I.motherid    = R->mother()? R->mother()->pdgId() : 0;
     I.vx          = R->vx();
     I.vy          = R->vy();
@@ -1516,6 +1531,7 @@ void ObjectsFormat::ResetGenPType(GenPType& I) {
     I.pdgId       = 0;
     I.status      = 0;
     I.radius      = -1.;
+    I.radius2D    = -1.;
     I.motherid    = 0;
     I.vx          = -99;
     I.vy          = -99;
@@ -1523,7 +1539,7 @@ void ObjectsFormat::ResetGenPType(GenPType& I) {
 
 }
 
-std::string ObjectsFormat::ListGenPType() {return "pt/F:eta/F:rapidity/F:phi/F:mass/F:energy/F:charge/I:pdgId/I:status/I:radius/F:motherid/I:vx/F:vy/F:vz/F";}
+std::string ObjectsFormat::ListGenPType() {return "pt/F:eta/F:rapidity/F:phi/F:mass/F:energy/F:charge/I:pdgId/I:status/I:radius/F:radius2D/F:motherid/I:vx/F:vy/F:vz/F";}
 
 
 
@@ -1560,7 +1576,7 @@ std::string ObjectsFormat::ListTriggerObjectType() {return "pt/F:eta/F:phi/F:mas
 //    Calo Jets      //
 //*******************//
 
-void ObjectsFormat::FillCaloJetType(CaloJetType& I, const reco::CaloJet* R, bool isMC, bool isMatched) {
+void ObjectsFormat::FillCaloJetType(CaloJetType& I, const reco::CaloJet* R, bool isMC, bool isMatched, float genbRadius2D, float genbEta) {
     if(!R) return;
     I.pt          = R->pt();
     I.eta         = R->eta();
@@ -1584,6 +1600,8 @@ void ObjectsFormat::FillCaloJetType(CaloJetType& I, const reco::CaloJet* R, bool
     I.nConstituents    = R->nConstituents();
     I.nPasses          = R->nPasses();
     I.isGenMatched     = isMatched;
+    I.genbRadius2D     = genbRadius2D;
+    I.genbEta          = genbEta;
 }
 
 void ObjectsFormat::ResetCaloJetType(CaloJetType& I) {
@@ -1608,10 +1626,12 @@ void ObjectsFormat::ResetCaloJetType(CaloJetType& I) {
     I.n90              = -1;
     I.nConstituents    = -1;
     I.nPasses          = -1;
-    I.isGenMatched        = false;
+    I.isGenMatched     = false;
+    I.genbRadius2D     = -1000.;
+    I.genbEta          = -999.;
 }
 
-std::string ObjectsFormat::ListCaloJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:emEnergyFraction/F:emEnergyInEB/F:emEnergyInEE/F:emEnergyInHF/F:energyFractionHadronic/F:hadEnergyInHB/F:hadEnergyInHE/F:hadEnergyInHF/F:hadEnergyInHO/F:longLived/O:maxEInEmTowers/F:maxEInHadTowers/F:n60/I:n90/I:nConstituents/I:nPasses/I:isGenMatched/O";}
+std::string ObjectsFormat::ListCaloJetType() {return "pt/F:eta/F:phi/F:mass/F:energy/F:emEnergyFraction/F:emEnergyInEB/F:emEnergyInEE/F:emEnergyInHF/F:energyFractionHadronic/F:hadEnergyInHB/F:hadEnergyInHE/F:hadEnergyInHF/F:hadEnergyInHO/F:longLived/O:maxEInEmTowers/F:maxEInHadTowers/F:n60/I:n90/I:nConstituents/I:nPasses/I:isGenMatched/O:genbRadius2D/F:genbEta/F";}
 
 
 //**************************//

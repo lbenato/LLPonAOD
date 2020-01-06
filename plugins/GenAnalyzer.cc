@@ -281,9 +281,28 @@ std::vector<reco::GenParticle> GenAnalyzer::FillGenVectorByIdStatusAndMotherAndK
     if(isRealData or PythiaLOSample) return Vect;
     // fill collection for this event 
     iEvent.getByToken(GenParticlesToken, GenCollection);
+    float gen_b_radius_2D = -1;
     // Loop on Gen Particles collection
     for(std::vector<reco::GenParticle>::const_iterator it = GenCollection->begin(); it != GenCollection->end(); ++it) {
       if(abs(it->pdgId()) == partid && (it->status()) == partstatus && fabs(it->mother()->pdgId()) == motherid && (it->pt())>pt && fabs(it->eta())<fabs(eta)) Vect.push_back(*it); // Fill vector
+    }
+    return Vect;
+}
+
+std::vector<reco::GenParticle> GenAnalyzer::FillGenVectorByIdStatusAndMotherAndKinAndRadius2D(const edm::Event& iEvent, int partid, int partstatus, int motherid, float pt, float eta, float min_radius_2D, float max_radius_2D) {
+
+    std::vector<reco::GenParticle> Vect;
+
+    // check if is real data
+    isRealData = iEvent.isRealData();
+    if(isRealData or PythiaLOSample) return Vect;
+    // fill collection for this event 
+    iEvent.getByToken(GenParticlesToken, GenCollection);
+    float gen_b_radius_2D = -1;
+    // Loop on Gen Particles collection
+    for(std::vector<reco::GenParticle>::const_iterator it = GenCollection->begin(); it != GenCollection->end(); ++it) {
+      gen_b_radius_2D = it->mother()? sqrt(pow(it->vx() - it->mother()->vx(),2) + pow(it->vy() - it->mother()->vy(),2)) : -1.;
+      if(abs(it->pdgId()) == partid && (it->status()) == partstatus && fabs(it->mother()->pdgId()) == motherid && (it->pt())>pt && fabs(it->eta())<fabs(eta) && (gen_b_radius_2D > min_radius_2D && gen_b_radius_2D < max_radius_2D)) Vect.push_back(*it); // Fill vector
     }
     return Vect;
 }

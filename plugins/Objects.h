@@ -100,16 +100,16 @@ cHadEFrac(-1.), nHadEFrac(-1.), eleEFrac(-1.), photonEFrac(-1.), muEFrac(-1.), n
 cHadMulti(-1.), nHadMulti(-1.), eleMulti(-1.), photonMulti(-1.), muMulti(-1.), cMulti(-1.), nMulti(-1.), npr(-1.),
 //multiplicity fractions
 cHadMultiFrac(-1.), nHadMultiFrac(-1.), eleMultiFrac(-1.), photonMultiFrac(-1.), muMultiFrac(-1.), cMultiFrac(-1.), nMultiFrac(-1.),
-
-	   //emEFrac(-1.), emEinEB(-1.), emEinEE(-1.), emEinHF(-1.), EFracHad(-1.), hadEinHB(-1.), hadEinHE(-1.), hadEinHF(-1.), hadEinHO(-1.),
+//emEFrac(-1.), emEinEB(-1.), emEinEE(-1.), emEinHF(-1.), EFracHad(-1.), hadEinHB(-1.), hadEinHE(-1.), hadEinHF(-1.), hadEinHO(-1.),
 ptGenJ(-10.), etaGenJ(-4.), phiGenJ(-4.), massGenJ(-10.),ptGen(-10.), etaGen(-4.), phiGen(-4.), massGen(-10.), pdgIdGen(0.),
 // ptLhe(-10.), etaLhe(-4.), phiLhe(-4.),
-    partonFlavour(0), hadronFlavour(0), mother(0), isLoose(false), isMedium(false), isTight(false), isTightLepVeto(false), isCSVL(false), isCSVM(false), isCSVT(false),
+partonFlavour(0), hadronFlavour(0), mother(0), isLoose(false), isMedium(false), isTight(false), isTightLepVeto(false), isCSVL(false), isCSVM(false), isCSVT(false),
+PUId(-1), PUDiscriminant(-2.),
 //isMatched(false), dR_q1(1000), dR_q2(1000), dR_q3(1000), dR_q4(1000), m_q1(false), m_q2(false), m_q3(false), m_q4(false), dR_pi1(1000), dR_pi2(1000),
 matchBquark(-1), matchLL(-1),
 //original_jet_index(-1),
-    isGenMatched(0), isVBFGenMatched(0),
-    alphaMax(-100.), sigIP2DMedian(-100.), theta2DMedian(-100.), POCA_theta2DMedian(-100.), nPixelHitsMedian(-1.0), nHitsMedian(-1.0),
+    isGenMatched(0), isVBFGenMatched(0), genbRadius2D (-1000.), genbEta (-999.),
+    alphaMax(-100.), sigIP2DMedian(-100.), theta2DMedian(-100.), POCA_theta2DMedian(-100.), nPixelHitsMedian(-1.0), nHitsMedian(-1.0), dxyMedian(-9999.), dzMedian(-9999.),
     hcalE(-100.), ecalE(-100.), FracCal(-100.), flightDist2d(-100.), flightDist2dError(-100.), flightDist3d(-100.), flightDist3dError(-100.), nSV(0), nSVCand(0), nVertexTracks(0), nSelectedTracks(0), dRSVJet(-100.), SV_x(-100.), SV_y(-100.), SV_z(-100.), SV_dx(-100.), SV_dy(-100.), SV_dz(-100.), nTracksSV(0), SV_mass(-100.),  isCaloTag(0),
 //VBF_DisplacedJet40_VTightID_Hadronic_match(0), VBF_DisplacedJet40_VVTightID_Hadronic_match(0),
     ptJESUp (-1.), ptJESDown (-1.), ptJERUp (-1.), ptJERDown (-1.), tau1(-1.), tau2(-1.), tau3(-1.), nSubJets(-1), tau21(-1.), tau31(-1.), tau32(-1.), tau1_neutral(-1.), tau2_neutral(-1.), tau21_neutral(-1.), tau1_charged(-1.), tau2_charged(-1.), tau21_charged(-1.), TriggerMatched_VBFJet(0), TriggerMatched_DisplacedJet(0), TriggerMatched_TripleJet50(0),
@@ -200,6 +200,8 @@ matchBquark(-1), matchLL(-1),
     bool isCSVL;
     bool isCSVM;
     bool isCSVT;
+    int PUId;
+    float PUDiscriminant;
   //bool isMatched;
   //float dR_q1;
   //float dR_q2;
@@ -216,12 +218,16 @@ matchBquark(-1), matchLL(-1),
   //int original_jet_index;
     int isGenMatched;
     int isVBFGenMatched;
+    float genbRadius2D;
+    float genbEta;
     float alphaMax;
     float sigIP2DMedian;
     float theta2DMedian;
     float POCA_theta2DMedian;
     float nPixelHitsMedian;
     float nHitsMedian;
+    float dxyMedian;
+    float dzMedian;
     float hcalE;
     float ecalE;
     float FracCal;
@@ -571,7 +577,7 @@ struct EventType {
 };
 
 struct GenPType {
-GenPType(): pt(-1.), eta(-9.), rapidity(-99999.), phi(-9.), mass(-1.), energy(-1.), charge(0), pdgId(0), status(0), radius(-1), motherid(0) {}
+GenPType(): pt(-1.), eta(-9.), rapidity(-99999.), phi(-9.), mass(-1.), energy(-1.), charge(0), pdgId(0), status(0), radius(-1), radius2D(-1), motherid(0) {}
     float pt;
     float eta;
     float rapidity;
@@ -582,6 +588,7 @@ GenPType(): pt(-1.), eta(-9.), rapidity(-99999.), phi(-9.), mass(-1.), energy(-1
     int pdgId;
     int status;
     float radius;
+    float radius2D;
     int motherid;
     float vx;
     float vy;
@@ -735,7 +742,7 @@ CustomFatJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.), energy(-1.), ptRaw(-
 
 
 struct CaloJetType {
-CaloJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.), energy(-1.), emEnergyFraction(-1.), emEnergyInEB(-1.), emEnergyInEE(-1.), emEnergyInHF(-1.), energyFractionHadronic(-1.), hadEnergyInHB(-1.), hadEnergyInHE(-1.), hadEnergyInHF(-1.), hadEnergyInHO(-1.), longLived(false), maxEInEmTowers(-1.), maxEInHadTowers(-1.), n60(-1), n90(-1), nConstituents(-1), nPasses(-1), isGenMatched(false)  {}
+CaloJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.), energy(-1.), emEnergyFraction(-1.), emEnergyInEB(-1.), emEnergyInEE(-1.), emEnergyInHF(-1.), energyFractionHadronic(-1.), hadEnergyInHB(-1.), hadEnergyInHE(-1.), hadEnergyInHF(-1.), hadEnergyInHO(-1.), longLived(false), maxEInEmTowers(-1.), maxEInHadTowers(-1.), n60(-1), n90(-1), nConstituents(-1), nPasses(-1), isGenMatched(false), genbRadius2D (-1000.), genbEta (-999.)  {}
 
     float pt;
     float eta;
@@ -759,6 +766,8 @@ CaloJetType(): pt(-1.), eta(-9.), phi(-9.), mass(-1.), energy(-1.), emEnergyFrac
     int nConstituents;
     int nPasses;
     bool isGenMatched;
+    float genbRadius2D;
+    float genbEta;
 };
 
 
