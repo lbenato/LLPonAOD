@@ -101,6 +101,19 @@ options.register(
     VarParsing.varType.bool,
     "calo parser flag"
 )
+options.register(
+    "PVBF", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "VBF parser flag"
+)
+options.register(
+    "PggH", False,
+    VarParsing.multiplicity.singleton,
+    VarParsing.varType.bool,
+    "ggH parser flag"
+)
+
 
 options.parseArguments()
 
@@ -135,6 +148,7 @@ if len(options.inputFiles) == 0:
     process.source = cms.Source("PoolSource",
         fileNames = cms.untracked.vstring(
             'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-30_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110750/0000/aodsim_1.root',
+            #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/GluGluH_HToSSTobbbb_MH-125_MS-15_ctauS-1000_Summer16_AODSIM/GluGluH_HToSSTobbbb_MH-125_MS-15_ctauS-1000_TuneCUETP8M1_13TeV-powheg-pythia8_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_AODSIM/181128_153659/0000/aodsim_1.root'
             #'file:/pnfs/desy.de/cms/tier2/store/user/lbenato/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_Summer16_AODSIM_Tranche2/VBFH_HToSSTobbbb_MH-125_MS-15_ctauS-5000_TuneCUETP8M1_13TeV-powheg-pythia8_Tranche2_PRIVATE-MC/RunIISummer16-PU_premix-Moriond17_80X_mcRun2_2016_Tranche2_AODSIM/181214_110243/0000/aodsim_1.root'
             #'/store/mc/RunIISummer16DR80Premix/ZJetsToNuNu_HT-800To1200_13TeV-madgraph/AODSIM/PUMoriond17_80X_mcRun2_asymptotic_2016_TrancheIV_v6-v1/120000/FE57DDB4-DDBA-E611-A344-0025905A6064.root',
             #'file:/pnfs/desy.de/cms/tier2/store/data/Run2016G/MET/AOD/07Aug17-v1/110000/3C4239F2-E9A0-E711-82F7-02163E014117.root' 
@@ -166,6 +180,8 @@ if RunLocal:
     isbbH             = True if ('bbHToBB_M-125_4FS_yb2_13TeV_amcatnlo' in process.source.fileNames[0]) else False #bbH has a different label in LHEEventProduct
     isSignal          = True if ('HToSSTobbbb_MH-125' in process.source.fileNames[0]) else False
     isCalo            = True #HERE for calo analyses!!!
+    isVBF             = True
+    isggH             = False
 
 else:
     isData            = options.PisData
@@ -177,6 +193,8 @@ else:
     isbbH             = options.PisbbH
     isSignal          = options.PisSignal
     isCalo            = options.Pcalo
+    isVBF             = options.PVBF
+    isggH             = options.PggH
 
 theRunBCD = ['Run2016B','Run2016C','Run2016D']
 theRunEF  = ['Run2016E','Run2016F']
@@ -189,6 +207,20 @@ print 'isReReco',isReReco
 print 'isReMiniAod',isReMiniAod
 print 'isPromptReco',isPromptReco
 print 'isSignal', isSignal
+
+if isVBF:
+    print "\n"
+    print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print "Performing analysis for VBF!"
+    print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print "\n"
+
+if isggH:
+    print "\n"
+    print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print "Performing analysis for ggH!"
+    print "~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+    print "\n"
 
 if isCalo:
     print "\n"
@@ -796,7 +828,6 @@ postfix = "" #"Update"
 #Info: these two producers seem not to be used
 postfix = 'Final'#TODO
 
-
 updateJetCollection(
     process,
     jetSource = cms.InputTag(jetSource),
@@ -816,6 +847,41 @@ for m in ['updatedPatJets'+postfix, 'updatedPatJetsTransientCorrected'+postfix]:
     setattr( getattr(process,m), 'addTagInfos', cms.bool(True) )
 
 jets_after_btag_tools = 'updatedPatJetsTransientCorrected'+postfix
+
+#-----------------------#
+#       PU Jet ID       #
+#-----------------------#
+
+#process.load("RecoJets.JetProducers.PileupJetID_cfi")
+from RecoJets.JetProducers.PileupJetID_cfi import pileupJetId
+process.pileupJetId = pileupJetId.clone(
+  jets=cms.InputTag(jets_after_btag_tools),
+  inputIsCorrected=True,
+  applyJec=True,
+  vertexes=cms.InputTag("offlineSlimmedPrimaryVertices")
+  )
+#print process.pileupJetId.dumpConfig()
+
+
+#process.load("PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff")
+from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import updatedPatJetCorrFactors, updatedPatJets
+process.patJetCorrFactorsReapplyJEC = updatedPatJetCorrFactors.clone(
+  src = cms.InputTag(jets_after_btag_tools),
+  levels = ['L1FastJet', 'L2Relative', 'L3Absolute']
+  )
+
+process.updatedJetsPUID = updatedPatJets.clone(
+  jetSource = cms.InputTag(jets_after_btag_tools),
+  jetCorrFactorsSource = cms.VInputTag(cms.InputTag("patJetCorrFactorsReapplyJEC"))
+  )
+
+process.updatedJetsPUID.userData.userFloats.src += ['pileupJetId:fullDiscriminant']
+process.updatedJetsPUID.userData.userInts.src += ['pileupJetId:fullId']
+
+jets_to_be_used = "updatedJetsFinal"
+jets_to_be_used = jets_after_btag_tools #FIX later!
+jets_to_be_used = "updatedJetsPUID" #Test, is this readable?
+
 #-----------------------#
 #       ANALYZER        #
 #-----------------------#
@@ -883,7 +949,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         #l1filters = cms.vstring('hltL1sTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBFIorHTT300','hltL1sDoubleJetC112','hltL1sQuadJetC50IorQuadJetC60IorHTT280IorHTT300IorHTT320IorTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBF','hltL1sTripleJetVBFIorHTTIorDoubleJetCIorSingleJet','hltL1sSingleMu22','hltL1sV0SingleMu22IorSingleMu25','hltL1sZeroBias','hltL1sSingleJet60','hltL1sSingleJet35','hltTripleJet50','hltDoubleJet65','hltSingleJet80','hltVBFFilterDisplacedJets'),
     ),
     chsJetSet = cms.PSet(
-        jets = cms.InputTag(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(jets_to_be_used),#(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
         jet1pt = cms.double(5),
         jet2pt = cms.double(5),
@@ -971,7 +1037,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     ),
 
     vbfJetSet = cms.PSet(
-        jets = cms.InputTag(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(jets_to_be_used),#(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(3), # 0: no selection, 1: loose, 2: medium, 3: tight
         ##jet1pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
         ##jet2pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
@@ -1119,6 +1185,10 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
         ),
     minGenBpt = cms.double(0.),#(15.),#gen b quarks in acceptance
     maxGenBeta = cms.double(999.),#(2.4),#gen b quarks in acceptance
+    minGenBradius2D = cms.double(129.),#new!! in cm
+    maxGenBradius2D = cms.double(402.),#new!! in cm
+    minGenBetaAcc = cms.double(0.),#(2.4),#
+    maxGenBetaAcc = cms.double(1.1),#(2.4),#
     #invmassVBF = cms.double(400.?),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
     #new cut, motivated by calo-lifetimes trigger path
     invmassVBF = cms.double(250.),
@@ -1137,6 +1207,8 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeAllJetPFCandidates = cms.bool(True), #Matched to either AK4 or AK8
     writeAllPFCandidates = cms.bool(False), #All PFCandidates. Large collection: Please write only if needed!
     performPreFiringStudies = cms.bool(True if ('unprefirable' in process.source.fileNames[0]) else False),
+    performVBF = cms.bool(isVBF),
+    performggH = cms.bool(isggH),
     verbose = cms.bool(False),
 )
 
@@ -1157,10 +1229,21 @@ process.seq = cms.Sequence(
     ##process.slimmedElectrons *
     ####process.fullPatMetSequenceTEST *#leading to segfault
     process.counter *
+
+    ####process.pileupJetIdUpdated *
+
     process.ntuple
 )
 
 process.p = cms.Path(process.seq)
+#process.p = cms.Path(process.pileupJetIdUpdated + process.patJetCorrFactorsReapplyJECFinal + process.updatedJetsFinal + process.seq)
+
+#process.out = cms.OutputModule("PoolOutputModule",
+#    fileName = cms.untracked.string("patTupleUpdatedFromMiniAOD.root"),
+#    outputCommands = cms.untracked.vstring('keep *Jet*', 'drop *')
+#    )
+
+#process.endpath = cms.EndPath(process.out)
 
 outFile = open("tmpConfig_AODNtuplizer.py","w")
 outFile.write(process.dumpPython())
