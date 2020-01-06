@@ -46,6 +46,13 @@ git clone https://github.com/ikrav/RecoEgamma-PhotonIdentification.git data/Reco
 cd data/RecoEgamma/PhotonIdentification/data
 git checkout egm_id_80X_v1
 cd $CMSSW_BASE/src
+
+### PU Jet ID, 80X (2016) recipes
+# https://twiki.cern.ch/twiki/bin/viewauth/CMS/PileupJetID
+git remote add ahinzmann git@github.com:ahinzmann/cmssw.git
+git fetch ahinzmann PUidMiniAODfix80
+git cherry-pick ca33756e1747aec27d13971bcfd0874b16724e7f
+
 ```
 
 Then, clone the git repository:
