@@ -14,6 +14,8 @@ namespace {
     DT4DSegmentType dummy5;
     CSCSegmentType dummy6;
     TrackType dummy7;
+    LeptonType dummy8;
+    RecoLeptonType dummy9;
 
 
     //Vector of structures                                                      
@@ -25,5 +27,7 @@ namespace {
     std::vector<DT4DSegmentType> dummyVector5;
     std::vector<CSCSegmentType> dummyVector6;
     std::vector<TrackType> dummyVector7;
+    std::vector<LeptonType> dummyVector8;
+    std::vector<RecoLeptonType> dummyVector9;
   };
 }

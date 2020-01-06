@@ -7,6 +7,8 @@
   <class name="DT4DSegmentType"/>
   <class name="CSCSegmentType"/>
   <class name="TrackType"/>
+  <class name="LeptonType"/>
+  <class name="RecoLeptonType"/>
   <class name="std::vector<RecoJetType>"/>
   <class name="std::vector<CaloJetType>"/>
   <class name="std::vector<GenPType>"/>
@@ -15,6 +17,8 @@
   <class name="std::vector<DT4DSegmentType>"/>
   <class name="std::vector<CSCSegmentType>"/>
   <class name="std::vector<TrackType>"/>
+  <class name="std::vector<LeptonType>"/>
+  <class name="std::vector<RecoLeptonType>"/>
 
 
 </lcgdict>
