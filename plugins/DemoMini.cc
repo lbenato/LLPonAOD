@@ -1,9 +1,9 @@
 // -*- C++ -*-
 //
-// Package:    Analyzer/Demo
-// Class:      Demo
+// Package:    Analyzer/DemoMini
+// Class:      DemoMini
 // 
-/**\class Demo Demo.cc Analyzer/Demo/plugins/Demo.cc
+/**\class DemoMini DemoMini.cc Analyzer/DemoMini/plugins/DemoMini.cc
 
  Description: [one line class summary]
 
@@ -31,10 +31,11 @@
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
+//Pat Jet classes
+#include "DataFormats/PatCandidates/interface/Jet.h"
 //Reco Jet classes
 #include "DataFormats/JetReco/interface/PFJet.h"
 #include "DataFormats/JetReco/interface/PFJetCollection.h"
-
 
 #include "SimDataFormats/GeneratorProducts/interface/LHEEventProduct.h"
 #include "SimDataFormats/GeneratorProducts/interface/LHERunInfoProduct.h"
@@ -58,10 +59,10 @@
 // constructor "usesResource("TFileService");"
 // This will improve performance in multithreaded jobs.
 
-class Demo : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
+class DemoMini : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
    public:
-      explicit Demo(const edm::ParameterSet&);
-      ~Demo();
+      explicit DemoMini(const edm::ParameterSet&);
+      ~DemoMini();
 
       static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -73,7 +74,7 @@ class Demo : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 
       // ----------member data ---------------------------
 
-    edm::EDGetTokenT<reco::PFJetCollection> jetToken;
+    edm::EDGetTokenT<pat::JetCollection> jetToken;
     edm::EDGetTokenT<LHEEventProduct> lheToken_;
     edm::EDGetTokenT<GenEventInfoProduct> genEventToken_;
 
@@ -110,13 +111,13 @@ class Demo : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
 //
 // constructors and destructor
 //
-Demo::Demo(const edm::ParameterSet& iConfig):
+DemoMini::DemoMini(const edm::ParameterSet& iConfig):
     PythiaLOSample(iConfig.getParameter<bool>("pythiaLOSample"))
 {
    if(PythiaLOSample) std::cout << "  Pythia LO sample" << std::endl;
 
-   edm::InputTag IT_jets = edm::InputTag("ak4PFJetsCHS");
-   jetToken = consumes<reco::PFJetCollection>(IT_jets);
+   edm::InputTag IT_jets = edm::InputTag("slimmedJets");
+   jetToken = consumes<pat::JetCollection>(IT_jets);
 
    if(!PythiaLOSample) lheToken_ = consumes <LHEEventProduct,edm::InEvent> (edm::InputTag("externalLHEProducer"));//(lheProduct_);
    genEventToken_ = consumes <GenEventInfoProduct,edm::InEvent> (edm::InputTag("generator"));//(genEventProduct_);
@@ -161,7 +162,7 @@ Demo::Demo(const edm::ParameterSet& iConfig):
 }
 
 
-Demo::~Demo()
+DemoMini::~DemoMini()
 {
  
    // do anything here that needs to be done at desctruction time
@@ -176,7 +177,7 @@ Demo::~Demo()
 
 // ------------ method called for each event  ------------
 void
-Demo::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+DemoMini::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
    using namespace edm;
 
@@ -221,11 +222,11 @@ Demo::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    lhe_Weight->Fill(0., lhe_weight);
    lhe_Weight_norm->Fill(0., lhe_weight_norm);
 
-   edm::Handle<reco::PFJetCollection> jets;
+   edm::Handle<pat::JetCollection> jets;
    iEvent.getByToken( jetToken, jets );
 
 
-   for(reco::PFJetCollection::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet) {
+   for(pat::JetCollection::const_iterator jet=jets->begin(); jet!=jets->end(); ++jet) {
       if(jet->pt()>15 and abs(jet->eta())<2.4)
         {
           nJets++;
@@ -256,7 +257,7 @@ Demo::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
-Demo::beginJob()
+DemoMini::beginJob()
 {
   //Tree branches                                                                                                                       
   //tree = fs->make<TTree>("tree", "tree");
@@ -265,13 +266,13 @@ Demo::beginJob()
 
 // ------------ method called once each job just after ending the event loop  ------------
 void 
-Demo::endJob() 
+DemoMini::endJob() 
 {
 }
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
 void
-Demo::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+DemoMini::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -280,4 +281,4 @@ Demo::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(Demo);
+DEFINE_FWK_MODULE(DemoMini);
