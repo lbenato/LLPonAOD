@@ -104,7 +104,7 @@ cHadMultiFrac(-1.), nHadMultiFrac(-1.), eleMultiFrac(-1.), photonMultiFrac(-1.),
 ptGenJ(-10.), etaGenJ(-4.), phiGenJ(-4.), massGenJ(-10.),ptGen(-10.), etaGen(-4.), phiGen(-4.), massGen(-10.), pdgIdGen(0.),
 // ptLhe(-10.), etaLhe(-4.), phiLhe(-4.),
 partonFlavour(0), hadronFlavour(0), mother(0), isLoose(false), isMedium(false), isTight(false), isTightLepVeto(false), isCSVL(false), isCSVM(false), isCSVT(false),
-PUId(-1), PUDiscriminant(-2.),
+PUId(-1), PUIdLoose(false), PUIdMedium(false), PUIdTight(false), PUDiscriminant(-2.),
 //isMatched(false), dR_q1(1000), dR_q2(1000), dR_q3(1000), dR_q4(1000), m_q1(false), m_q2(false), m_q3(false), m_q4(false), dR_pi1(1000), dR_pi2(1000),
 matchBquark(-1), matchLL(-1),
 //original_jet_index(-1),
@@ -201,6 +201,9 @@ matchBquark(-1), matchLL(-1),
     bool isCSVM;
     bool isCSVT;
     int PUId;
+    bool PUIdLoose;
+    bool PUIdMedium;
+    bool PUIdTight;
     float PUDiscriminant;
   //bool isMatched;
   //float dR_q1;
