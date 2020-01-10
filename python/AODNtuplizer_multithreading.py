@@ -302,7 +302,8 @@ print "JEC ->",JECstring
 #       COUNTER         #
 #-----------------------#
 process.counter = cms.EDAnalyzer('CounterAnalyzer',
-    lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
+    genProduct = cms.InputTag('generator'),
+    #lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
     pythiaLOSample = cms.bool(True if noLHEinfo else False),
 )
 
@@ -923,7 +924,7 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
 ### displaced tracks
 #'HLT_VBF_DisplacedJet40_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_DisplacedTrack_2TrackIP2DSig5_v', 'HLT_HT350_DisplacedDijet40_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VTightID_DisplacedTrack_v', 'HLT_VBF_DisplacedJet40_VVTightID_DisplacedTrack_v', 'HLT_HT350_DisplacedDijet80_Tight_DisplacedTrack_v', 'HLT_HT650_DisplacedDijet80_Inclusive_v', 'HLT_HT750_DisplacedDijet80_Inclusive_v',
 ### calo lifetimes
-'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v', 'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v',
+#'HLT_VBF_DisplacedJet40_VTightID_Hadronic_v', 'HLT_VBF_DisplacedJet40_VVTightID_Hadronic_v',
 ###
 #'HLT_CaloMHTNoPU90_PFMET90_PFMHT90_IDTight_BTagCSV_p067_v', 'HLT_MET200_v', 'HLT_MET250_v', 'HLT_MET75_IsoTrk50_v', 'HLT_MET90_IsoTrk50_v', 'HLT_MonoCentralPFJet80_PFMETNoMu110_PFMHTNoMu110_IDTight_v', 'HLT_MonoCentralPFJet80_PFMETNoMu120_PFMHTNoMu120_IDTight_v', 'HLT_PFMET110_PFMHT110_IDTight_v', 'HLT_PFMET120_PFMHT120_IDTight_v', 'HLT_PFMET170_HBHECleaned_v', 'HLT_PFMET300_v', 'HLT_PFMETNoMu110_PFMHTNoMu110_IDTight_v', 'HLT_PFMETNoMu120_PFMHTNoMu120_IDTight_v',
 ###production for MET
@@ -1200,11 +1201,11 @@ process.ntuple = cms.EDAnalyzer('AODNtuplizer',
     writeGenBquarks = cms.bool(True), #Acceptance cuts a few lines above!
     writeGenLLPs = cms.bool(True),
     writeOnlyTriggerEvents = cms.bool(True),#slims down ntuples a lot
-    writeOnlyisVBFEvents = cms.bool(False),#slims down ntuples a lot
+    writeOnlyisVBFEvents = cms.bool(True),#slims down ntuples a lot
     ## PFCandidates:
     writeAK4JetPFCandidates = cms.bool(False), #Matched to AK4 only!
     writeAK8JetPFCandidates = cms.bool(False), #Matched to AK8 only!
-    writeAllJetPFCandidates = cms.bool(True), #Matched to either AK4 or AK8
+    writeAllJetPFCandidates = cms.bool(False), #Matched to either AK4 or AK8
     writeAllPFCandidates = cms.bool(False), #All PFCandidates. Large collection: Please write only if needed!
     performPreFiringStudies = cms.bool(True if ('unprefirable' in process.source.fileNames[0]) else False),
     performVBF = cms.bool(isVBF),

@@ -186,6 +186,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int EventNumber, LumiNumber, RunNumber, nPV, nSV;
     bool AtLeastOneTrigger;
     float EventWeight;
+    float GenEventWeight;
     float PUWeight, PUWeightUp, PUWeightDown;
     long int nJets;
     long int nCaloJets;
@@ -326,6 +327,7 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
 
     edm::InputTag IT_jets = edm::InputTag("ak4PFJetsCHS");
     jetToken = consumes<reco::PFJetCollection>(IT_jets);
+    edm::InputTag lheProduct_ = edm::InputTag("lheProduct");
 
     ////edm::InputTag IT_met = edm::InputTag("patMETs");
     ////edm::InputTag IT_met = edm::InputTag("slimmedMETs");
@@ -395,7 +397,7 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     isVBF = false;
     isggH = false;
     EventNumber = LumiNumber = RunNumber = nPV = 0;
-    EventWeight = PUWeight = PUWeightDown = PUWeightUp = 1.;
+    GenEventWeight = EventWeight = PUWeight = PUWeightDown = PUWeightUp = 1.;
     HT = 0.;
     nMatchedCHSJets = 0;
     nMatchedCaloJets = 0;
@@ -428,6 +430,10 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     EventNumber = iEvent.id().event();
     LumiNumber = iEvent.luminosityBlock();
     RunNumber = iEvent.id().run();
+
+    //GenEventWeight
+    GenEventWeight = theGenAnalyzer->GenEventWeight(iEvent);
+    EventWeight *= GenEventWeight;
 
     //Not needed anymore
     edm::Handle<reco::PFJetCollection> JetColl;
@@ -1867,6 +1873,7 @@ AODNtuplizer::beginJob()
    tree -> Branch("LumiNumber" , &LumiNumber , "LumiNumber/L");
    tree -> Branch("RunNumber" , &RunNumber , "RunNumber/L");
    tree -> Branch("EventWeight", &EventWeight, "EventWeight/F");
+   tree -> Branch("GenEventWeight", &GenEventWeight, "GenEventWeight/F");
    tree -> Branch("PUWeight", &PUWeight, "PUWeight/F");
    tree -> Branch("PUWeightUp", &PUWeightUp, "PUWeightUp/F");
    tree -> Branch("PUWeightDown", &PUWeightDown, "PUWeightDown/F");

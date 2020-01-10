@@ -3,7 +3,8 @@
 
 
 CounterAnalyzer::CounterAnalyzer(const edm::ParameterSet& iConfig):
-    LheToken(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheProduct"))),
+    //LheToken(consumes<LHEEventProduct>(iConfig.getParameter<edm::InputTag>("lheProduct"))),
+    GenToken(consumes<GenEventInfoProduct>(iConfig.getParameter<edm::InputTag>("genProduct"))),
     PythiaLOSample(iConfig.getParameter<bool>("pythiaLOSample"))
 {
     //now do what ever initialization is needed
@@ -46,7 +47,10 @@ void CounterAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
     
     //int lhePartons(0), lheBPartons(0);
     //float lheHT(0.), lhePtZ(0.), pt(0.);
-    
+
+
+    //Old method; need a new one for negative weights!
+    /*
     if(!iEvent.isRealData() && !PythiaLOSample) {
         // Declare and open collection
         edm::Handle<LHEEventProduct> LheEventCollection;
@@ -71,6 +75,14 @@ void CounterAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& i
 	    //}
             //if(hepeup.ISTUP[i]==2 && (abs(hepeup.IDUP[i])==23 || abs(hepeup.IDUP[i])==24)) lhePtZ = pt;
 	//}
+    }
+    */
+    if(!iEvent.isRealData()) {
+      // Declare and open collection
+      edm::Handle<GenEventInfoProduct> GenEventCollection;
+      iEvent.getByToken(GenToken, GenEventCollection);
+      const GenEventInfoProduct& genEventInfo = *(GenEventCollection.product());
+      weight = genEventInfo.weights()[0];
     }
     Weight->Fill(0., weight);
     

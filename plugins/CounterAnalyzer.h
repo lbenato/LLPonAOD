@@ -69,7 +69,8 @@ class CounterAnalyzer : public edm::one::EDAnalyzer<edm::one::SharedResources>  
 
       // ----------member data ---------------------------
       
-      edm::EDGetToken LheToken;
+      //edm::EDGetToken LheToken;
+      edm::EDGetToken GenToken;
       edm::Service<TFileService> fs;
       TH1F* Weight;
       //TH1F* NPartons;

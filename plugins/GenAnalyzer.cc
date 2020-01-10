@@ -17,6 +17,7 @@ GenAnalyzer::GenAnalyzer(edm::ParameterSet& PSet, edm::ConsumesCollector&& CColl
     ApplyTopPtReweigth(PSet.getParameter<bool>("applyTopPtReweigth")),
     PythiaLOSample(PSet.getParameter<bool>("pythiaLOSample"))
 {
+
     for(unsigned int i = 0; i < SampleDYJetsToLL.size(); i++) {
         Files[SampleDYJetsToLL[i]] = new TFile((SampleDir+SampleDYJetsToLL[i]+".root").c_str(), "READ");
         hPartons[SampleDYJetsToLL[i]] = (TH1F*)Files[SampleDYJetsToLL[i]]->Get("counter/c_lhePartons");
@@ -83,6 +84,21 @@ GenAnalyzer::~GenAnalyzer() {
 }
 
 // ---------- GEN WEIGHTS ----------
+
+
+float GenAnalyzer::GenEventWeight(const edm::Event& iEvent) {
+    float weight(1.);
+    if(iEvent.isRealData()) return weight;
+
+    // Declare and open collection
+    edm::Handle<GenEventInfoProduct> GenEventCollection;
+    iEvent.getByToken(GenToken, GenEventCollection);
+    const GenEventInfoProduct& genEventInfo = *(GenEventCollection.product());
+
+    weight = genEventInfo.weights()[0];
+    return weight;
+}
+
 
 std::map<int, float> GenAnalyzer::FillWeightsMap(const edm::Event& iEvent) {
     std::map<int, float> Weights;

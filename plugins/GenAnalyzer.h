@@ -25,6 +25,7 @@ class GenAnalyzer {
     public:
         GenAnalyzer(edm::ParameterSet&, edm::ConsumesCollector&&);
         ~GenAnalyzer();
+        virtual float GenEventWeight(const edm::Event&);
         virtual std::map<int, float> FillWeightsMap(const edm::Event&);
         virtual std::map<std::string, float> FillLheMap(const edm::Event&);
         virtual std::vector<reco::GenParticle> FillGenVector(const edm::Event&);
