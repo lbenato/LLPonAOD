@@ -184,6 +184,7 @@ class ZHNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     long int EventNumber, LumiNumber, RunNumber, nPV, nSV;
     bool AtLeastOneTrigger;
     float EventWeight;
+    float GenEventWeight;
     float LeptonWeight, ZewkWeight, WewkWeight;
     float PUWeight, PUWeightUp, PUWeightDown;
     long int nJets;
@@ -391,7 +392,7 @@ ZHNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    isVBF = false;
    isZtoMM = isZtoEE = isWtoMN = isWtoEN = isTtoEM = false;
    EventNumber = LumiNumber = RunNumber = nPV = 0;
-   EventWeight = PUWeight = PUWeightDown = PUWeightUp = 1.;
+   GenEventWeight = EventWeight = PUWeight = PUWeightDown = PUWeightUp = 1.;
    LeptonWeight = ZewkWeight = WewkWeight = 1.;
    HT = 0.;
    nMatchedCHSJets = 0;
@@ -421,6 +422,10 @@ ZHNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
    EventNumber = iEvent.id().event();
    LumiNumber = iEvent.luminosityBlock();
    RunNumber = iEvent.id().run();
+
+   //GenEventWeight                                                            
+   GenEventWeight = theGenAnalyzer->GenEventWeight(iEvent);
+   EventWeight *= GenEventWeight;
 
    //Not needed anymore
    edm::Handle<reco::PFJetCollection> JetColl;
@@ -1866,6 +1871,7 @@ ZHNtuplizer::beginJob()
    tree -> Branch("LumiNumber" , &LumiNumber , "LumiNumber/L");
    tree -> Branch("RunNumber" , &RunNumber , "RunNumber/L");
    tree -> Branch("EventWeight", &EventWeight, "EventWeight/F");
+   tree -> Branch("GenEventWeight", &GenEventWeight, "GenEventWeight/F");
    tree -> Branch("PUWeight", &PUWeight, "PUWeight/F");
    tree -> Branch("PUWeightUp", &PUWeightUp, "PUWeightUp/F");
    tree -> Branch("PUWeightDown", &PUWeightDown, "PUWeightDown/F");

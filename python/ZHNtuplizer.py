@@ -123,7 +123,7 @@ process.options.numberOfThreads=cms.untracked.uint32(8)
 process.options.numberOfStreams=cms.untracked.uint32(0)
 
 ## Events to process
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(-1) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(500) )
 
 ## Messagge logger
 process.load("FWCore.MessageService.MessageLogger_cfi")
@@ -276,7 +276,8 @@ print "JEC ->",JECstring
 #       COUNTER         #
 #-----------------------#
 process.counter = cms.EDAnalyzer('CounterAnalyzer',
-    lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
+    #lheProduct = cms.InputTag('externalLHEProducer' if not isbbH else 'source'),
+    genProduct = cms.InputTag('generator'),
     pythiaLOSample = cms.bool(True if noLHEinfo else False),
 )
 
@@ -831,7 +832,38 @@ for m in ['updatedPatJets'+postfix, 'updatedPatJetsTransientCorrected'+postfix]:
 
 jets_after_btag_tools = 'updatedPatJetsTransientCorrected'+postfix
 
-print("??????????????????????")
+#-----------------------#
+#       PU Jet ID       #
+#-----------------------#
+
+#process.load("RecoJets.JetProducers.PileupJetID_cfi")
+from RecoJets.JetProducers.PileupJetID_cfi import pileupJetId
+process.pileupJetId = pileupJetId.clone(
+  jets=cms.InputTag(jets_after_btag_tools),
+  inputIsCorrected=True,
+  applyJec=True,
+  vertexes=cms.InputTag("offlineSlimmedPrimaryVertices")
+  )
+#print process.pileupJetId.dumpConfig()
+#process.load("PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff")
+from PhysicsTools.PatAlgos.producersLayer1.jetUpdater_cff import updatedPatJetCorrFactors, updatedPatJets
+process.patJetCorrFactorsReapplyJEC = updatedPatJetCorrFactors.clone(
+  src = cms.InputTag(jets_after_btag_tools),
+  levels = ['L1FastJet', 'L2Relative', 'L3Absolute']
+  )
+
+process.updatedJetsPUID = updatedPatJets.clone(
+  jetSource = cms.InputTag(jets_after_btag_tools),
+  jetCorrFactorsSource = cms.VInputTag(cms.InputTag("patJetCorrFactorsReapplyJEC"))
+  )
+
+process.updatedJetsPUID.userData.userFloats.src += ['pileupJetId:fullDiscriminant']
+process.updatedJetsPUID.userData.userInts.src += ['pileupJetId:fullId']
+
+jets_to_be_used = "updatedJetsFinal"
+jets_to_be_used = jets_after_btag_tools #FIX later!
+jets_to_be_used = "updatedJetsPUID" #Test, is this readable?
+
 #-----------------------#
 #       ANALYZER        #
 #-----------------------#
@@ -903,7 +935,7 @@ process.ntuple = cms.EDAnalyzer('ZHNtuplizer',
         #l1filters = cms.vstring('hltL1sTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBFIorHTT300','hltL1sDoubleJetC112','hltL1sQuadJetC50IorQuadJetC60IorHTT280IorHTT300IorHTT320IorTripleJet846848VBFIorTripleJet887256VBFIorTripleJet927664VBF','hltL1sTripleJetVBFIorHTTIorDoubleJetCIorSingleJet','hltL1sSingleMu22','hltL1sV0SingleMu22IorSingleMu25','hltL1sZeroBias','hltL1sSingleJet60','hltL1sSingleJet35','hltTripleJet50','hltDoubleJet65','hltSingleJet80','hltVBFFilterDisplacedJets'),
     ),
     chsJetSet = cms.PSet(
-        jets = cms.InputTag(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(jets_to_be_used),#(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(0), # 0: no selection, 1: loose, 2: medium, 3: tight
         jet1pt = cms.double(5),
         jet2pt = cms.double(5),
@@ -991,7 +1023,7 @@ process.ntuple = cms.EDAnalyzer('ZHNtuplizer',
     ),
 
     vbfJetSet = cms.PSet(
-        jets = cms.InputTag(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
+        jets = cms.InputTag(jets_to_be_used),#(jets_after_btag_tools),#('ak4PFJetsCHS'),#('updatedPatJetsTransientCorrected'+postfix),
         jetid = cms.int32(3), # 0: no selection, 1: loose, 2: medium, 3: tight
         ##jet1pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
         ##jet2pt = cms.double(30.),#https://indico.desy.de/indico/event/20983/contribution/0/material/slides/0.pdf
