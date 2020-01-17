@@ -179,7 +179,7 @@ class AODNtuplizer : public edm::one::EDAnalyzer<edm::one::SharedResources>  {
     std::map<std::string, bool> TriggerMap;
     std::map<std::string, bool> MetFiltersMap;
 
-    bool isVerbose;
+    bool isVerbose, isCalo;
     bool isMC;
     bool isVBF;
     bool isggH;
@@ -287,7 +287,8 @@ AODNtuplizer::AODNtuplizer(const edm::ParameterSet& iConfig):
     PerformPreFiringStudies(iConfig.getParameter<bool>("performPreFiringStudies")),
     PerformVBF(iConfig.getParameter<bool>("performVBF")),
     PerformggH(iConfig.getParameter<bool>("performggH")),
-    isVerbose(iConfig.getParameter<bool> ("verbose"))
+    isVerbose(iConfig.getParameter<bool> ("verbose")),
+    isCalo(iConfig.getParameter<bool> ("iscalo"))
 
 {
 
@@ -484,9 +485,6 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     
     HT = theCHSJetAnalyzer->CalculateHT(iEvent,3,15,3.);
 
-    //if(HT<100) return;//Avoid events with low HT//WAIT!!
-
-
     //------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------
     // Electrons
@@ -564,6 +562,15 @@ AODNtuplizer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     //if(MET.genMET()) std::cout << MET.genMET()->pt()<<std::endl;
     //std::cout << MET.uncorPt() << std::endl;
     //if(MET.shiftedPt(pat::MET::METUncertainty::UnclusteredEnDown)) std::cout << MET.shiftedPt(pat::MET::METUncertainty::UnclusteredEnDown)<<std::endl;
+
+
+    if(HT<100) return;//Avoid events with low HT//WAIT!!
+    if(isCalo && MET.pt()<120) return;//Avoid events with very low MET for calo analysis
+    if(isCalo && nMuons>0) return;//Veto leptons and photons!
+    if(isCalo && nTaus>0) return;//Veto leptons and photons!
+    if(isCalo && nElectrons>0) return;//Veto leptons and photons!
+    if(isCalo && nPhotons>0) return;//Veto leptons and photons!
+
 
     //------------------------------------------------------------------------------------------
     //------------------------------------------------------------------------------------------
